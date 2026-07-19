@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.1.3 - 2026-07-19
+
+### Added
+
+- streamable HTTP MCP bridge for Codex / Claude-style runtimes
+- `relaycore mcp-http` CLI entrypoint
+- explicit optional dependency path for MCP support on Python 3.10+
+
+### Changed
+
+- README now documents a verified local Codex deployment path
+- package metadata no longer exposes the previous personal author name
+
+### Validation
+
+- `pytest`: `48 passed`
+
 ## 0.1.2 - 2026-07-19
 
 ### Changed

@@ -4,9 +4,9 @@ Date: 2026-07-19
 
 ## Current Published Release
 
-- Version: `v0.1.2`
-- Release page: [RelayCore v0.1.2](https://github.com/totooss/relaycore/releases/tag/v0.1.2)
-- Git tag: `v0.1.2`
+- Version: `v0.1.3`
+- Release page: [RelayCore v0.1.3](https://github.com/totooss/relaycore/releases/tag/v0.1.3)
+- Git tag: `v0.1.3`
 
 ## Repository Contents
 
@@ -23,13 +23,14 @@ Date: 2026-07-19
 
 - Command check: `python -m relaycore --help`
 - Test command: `pytest`
-- Result on 2026-07-19: `46 passed`
+- Result on 2026-07-19: `48 passed`
 
 ## Version History In Repository
 
 - `docs/GITHUB_RELEASE_v0.1.0.md`
 - `docs/GITHUB_RELEASE_v0.1.1.md`
 - `docs/GITHUB_RELEASE_v0.1.2.md`
+- `docs/GITHUB_RELEASE_v0.1.3.md`
 
 ## Notes
 

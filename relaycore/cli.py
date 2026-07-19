@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+import sys
 from typing import Optional
 
 from werkzeug.serving import run_simple
@@ -27,6 +28,16 @@ def build_parser() -> argparse.ArgumentParser:
     serve_parser.add_argument("--access-token", help="Optional access token override.")
     serve_parser.add_argument("--cors-origin", action="append", default=[], help="Allowed CORS origin. Repeatable.")
     serve_parser.add_argument("--backup-dir", help="Backup directory override.")
+
+    mcp_http_parser = subparsers.add_parser(
+        "mcp-http",
+        help="Run the streamable HTTP MCP bridge for Codex/Claude-style runtimes.",
+    )
+    mcp_http_parser.add_argument("--db", default=str(DEFAULT_DB_PATH), help="Database path.")
+    mcp_http_parser.add_argument("--host", default="127.0.0.1", help="Bind host.")
+    mcp_http_parser.add_argument("--port", type=int, default=9090, help="Bind port.")
+    mcp_http_parser.add_argument("--path", default="/mcp", help="Streamable HTTP mount path.")
+    mcp_http_parser.add_argument("--name", default="RelayCore", help="MCP server name.")
 
     export_parser = subparsers.add_parser("export", help="Export a redacted storage snapshot as JSON.")
     export_parser.add_argument("--db", default=str(DEFAULT_DB_PATH), help="Database path.")
@@ -71,6 +82,55 @@ def command_export(db_path: str, *, redact: bool) -> int:
         storage.close()
 
 
+def command_mcp_http(
+    *,
+    db_path: str,
+    host: str,
+    port: int,
+    path: str,
+    name: str,
+) -> int:
+    if sys.version_info < (3, 10):
+        major = sys.version_info[0]
+        minor = sys.version_info[1]
+        print(
+            "relaycore mcp-http requires Python 3.10+ because the MCP SDK does not support Python {}.{}.".format(
+                major,
+                minor,
+            )
+        )
+        print("Use a separate Python 3.10+ environment and install with: pip install -e .[mcp]")
+        return 2
+
+    try:
+        from .mcp_http import main as mcp_http_main
+    except ModuleNotFoundError as error:
+        if error.name == "mcp":
+            print("Missing optional dependency 'mcp'. Install it with: pip install -e .[mcp]")
+            return 2
+        raise
+
+    argv = [
+        "relaycore mcp-http",
+        "--db",
+        db_path,
+        "--host",
+        host,
+        "--port",
+        str(port),
+        "--path",
+        path,
+        "--name",
+        name,
+    ]
+    original_argv = sys.argv
+    try:
+        sys.argv = argv
+        return mcp_http_main()
+    finally:
+        sys.argv = original_argv
+
+
 def main() -> int:
     args = build_parser().parse_args()
     if args.command == "init-db":
@@ -83,6 +143,14 @@ def main() -> int:
             access_token=args.access_token or os.environ.get("RELAYCORE_ACCESS_TOKEN"),
             cors_origins=args.cors_origin,
             backup_dir=args.backup_dir,
+        )
+    if args.command == "mcp-http":
+        return command_mcp_http(
+            db_path=args.db,
+            host=args.host,
+            port=args.port,
+            path=args.path,
+            name=args.name,
         )
     if args.command == "export":
         return command_export(args.db, redact=args.redact)

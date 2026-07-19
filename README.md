@@ -59,11 +59,26 @@ RelayCore 当前仓库里比较集中的组合能力是：
 
 ## 安装
 
+核心服务：
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -e .[dev]
 ```
+
+Codex / MCP 接入：
+
+```bash
+python3.12 -m venv .venv-mcp
+source .venv-mcp/bin/activate
+pip install -e .[mcp]
+```
+
+说明：
+
+- 核心 RelayCore 服务当前支持 `Python 3.9+`
+- `relaycore mcp-http` 依赖官方 MCP Python SDK，需要 `Python 3.10+`
 
 ## 快速开始
 
@@ -111,7 +126,30 @@ python scripts/migrate_local_memories.py --session-id local-memory-migration
 relaycore init-db
 relaycore serve
 relaycore export
+relaycore mcp-http
 ```
+
+## 本地 Codex 接入
+
+1. 启动 RelayCore MCP HTTP 服务：
+
+```bash
+source .venv-mcp/bin/activate
+relaycore mcp-http --host 127.0.0.1 --port 9090
+```
+
+2. 在项目内 `.codex/config.toml` 使用：
+
+```toml
+[mcp_servers.relaycore]
+url = "http://127.0.0.1:9090/mcp"
+```
+
+3. 验证方式：
+
+- `codex mcp get relaycore`
+- `codex mcp list`
+- 连接后调用 `memory_begin_task` 或 `memory_context`
 
 ## 构建导图
 
@@ -136,7 +174,7 @@ flowchart LR
 
 - [构建路线图](docs/ROADMAP.md)
 - [发布信息](docs/RELEASE_READINESS.md)
-- [当前 Release 文案](docs/GITHUB_RELEASE_v0.1.2.md)
+- [当前 Release 文案](docs/GITHUB_RELEASE_v0.1.3.md)
 
 ## 测试
 
@@ -144,7 +182,7 @@ flowchart LR
 pytest
 ```
 
-当前本地测试结果（2026-07-19）：`46 passed`
+当前本地测试结果（2026-07-19）：`48 passed`
 
 ## 后续优化 TODO
 
@@ -223,11 +261,26 @@ The table below is limited to public repository descriptions and publicly visibl
 
 ## Installation
 
+Core service:
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -e .[dev]
 ```
+
+Codex / MCP integration:
+
+```bash
+python3.12 -m venv .venv-mcp
+source .venv-mcp/bin/activate
+pip install -e .[mcp]
+```
+
+Notes:
+
+- The core RelayCore service currently supports `Python 3.9+`
+- `relaycore mcp-http` depends on the official MCP Python SDK and requires `Python 3.10+`
 
 ## Quick Start
 
@@ -275,13 +328,36 @@ Available entrypoints:
 relaycore init-db
 relaycore serve
 relaycore export
+relaycore mcp-http
 ```
+
+## Local Codex Setup
+
+1. Start the RelayCore MCP HTTP service:
+
+```bash
+source .venv-mcp/bin/activate
+relaycore mcp-http --host 127.0.0.1 --port 9090
+```
+
+2. Use this project-level `.codex/config.toml` entry:
+
+```toml
+[mcp_servers.relaycore]
+url = "http://127.0.0.1:9090/mcp"
+```
+
+3. Verify with:
+
+- `codex mcp get relaycore`
+- `codex mcp list`
+- connect and call `memory_begin_task` or `memory_context`
 
 ## Documentation
 
 - [Roadmap](docs/ROADMAP.md)
 - [Release Information](docs/RELEASE_READINESS.md)
-- [Current Release Notes](docs/GITHUB_RELEASE_v0.1.2.md)
+- [Current Release Notes](docs/GITHUB_RELEASE_v0.1.3.md)
 
 ## Tests
 
@@ -289,7 +365,7 @@ relaycore export
 pytest
 ```
 
-Current local test result on July 19, 2026: `46 passed`
+Current local test result on July 19, 2026: `48 passed`
 
 ## Acknowledgements
 
