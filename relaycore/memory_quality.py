@@ -331,6 +331,58 @@ class MemoryQualityService:
 
         return self._persist_new_candidate_result(proposal, candidate_id)
 
+    def resolve_candidate(
+        self,
+        candidate_id: str,
+        *,
+        status: str,
+        actor: str,
+        runtime: Optional[str] = None,
+        mode: Optional[str] = None,
+        recommended_action: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> MemoryCandidateRecord:
+        candidate = self.storage.get_memory_candidate(candidate_id)
+        resolved = self.storage.resolve_memory_candidate(
+            candidate_id,
+            status,
+            recommended_action=recommended_action,
+        )
+        self.storage.append_audit_log(
+            actor=collapse_whitespace(actor),
+            action="memory_candidate_resolve",
+            resource_type="memory_candidate",
+            resource_id=candidate_id,
+            metadata=normalize_metadata(
+                {
+                    "from_status": candidate.status,
+                    "to_status": resolved.status,
+                    "recommended_action": recommended_action or resolved.recommended_action,
+                    "runtime": runtime,
+                    "mode": mode,
+                    **(metadata or {}),
+                }
+            ),
+        )
+        if self.event_log is not None and resolved.session_id:
+            event_type = "memory_conflict_resolved" if candidate.conflicts_with else "memory_resolved"
+            self.event_log.append_event(
+                session_id=resolved.session_id,
+                agent_id=collapse_whitespace(actor),
+                runtime=runtime,
+                mode=mode,
+                event_type=event_type,
+                content={
+                    "candidate_id": candidate_id,
+                    "status": resolved.status,
+                    "previous_status": candidate.status,
+                    "recommended_action": resolved.recommended_action,
+                    "conflicts_with": candidate.conflicts_with,
+                },
+                metadata={"source": "memory_quality", **normalize_metadata(metadata)},
+            )
+        return resolved
+
     def _persist_merged_result(
         self,
         proposal: NormalizedMemoryProposal,

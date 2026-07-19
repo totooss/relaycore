@@ -167,18 +167,32 @@ class EventLogService:
         after_seq: Optional[int] = None,
         backlog_limit: int = 50,
         heartbeat: bool = True,
+        poll_timeout: float = 15.0,
+        max_live_messages: Optional[int] = None,
+        max_heartbeats: Optional[int] = None,
     ) -> Generator[bytes, None, None]:
         backlog = self.list_events(session_id, after_seq=after_seq, limit=backlog_limit)
         for event in backlog:
             yield format_sse("event", {"event": serialize_event(event)}, event_id=event.seq).encode("utf-8")
 
         queue = self.broker.subscribe(session_id)
+        live_messages = 0
+        heartbeat_count = 0
         try:
-            try:
-                payload = queue.get(timeout=0.05)
-                yield payload.encode("utf-8")
-            except Empty:
-                if heartbeat:
+            while True:
+                try:
+                    payload = queue.get(timeout=max(0.01, poll_timeout))
+                    live_messages += 1
+                    heartbeat_count = 0
+                    yield payload.encode("utf-8")
+                    if max_live_messages is not None and live_messages >= max_live_messages:
+                        break
+                except Empty:
+                    if not heartbeat:
+                        continue
+                    heartbeat_count += 1
                     yield format_sse("heartbeat", {"session_id": session_id}).encode("utf-8")
+                    if max_heartbeats is not None and heartbeat_count >= max_heartbeats:
+                        break
         finally:
             self.broker.unsubscribe(session_id, queue)

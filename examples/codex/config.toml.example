@@ -1,0 +1,5 @@
+# RelayCore MCP example for Codex.
+# Copy this to ~/.codex/config.toml or merge the section into your existing file.
+
+[mcp_servers.relaycore]
+url = "http://127.0.0.1:9090/mcp"

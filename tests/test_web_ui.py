@@ -17,6 +17,18 @@ def build_client(tmp_path: Path):
         mode="assist",
         created_by="codex",
     )
+    storage.create_memory_candidate(
+        candidate_id="candidate-decision-1",
+        proposed_by="codex-agent",
+        runtime="codex",
+        session_id="session-1",
+        type="decision",
+        title="Primary Database",
+        content="Use SQLite for the MVP.",
+        summary="Use SQLite for the MVP.",
+        tags=["storage"],
+        status="active",
+    )
     storage.upsert_agent_state(
         agent_id="codex-agent",
         runtime="codex",
@@ -30,10 +42,26 @@ def build_client(tmp_path: Path):
         proposed_by="codex-agent",
         type="decision",
         title="Primary Database",
-        content="Use SQLite for the MVP.",
+        content="Use PostgreSQL for the MVP.",
         runtime="codex",
         session_id="session-1",
         tags=["storage"],
+        candidate_id="candidate-conflict-1",
+        relation_hint="supersede",
+    )
+    storage.create_memory_candidate(
+        candidate_id="candidate-rule-1",
+        proposed_by="claude-agent",
+        type="rule",
+        title="No Scope Drift",
+        content="Do not drift from the current confirmed phase or task scope while executing.",
+        runtime="claude",
+        session_id="session-1",
+        summary="Stay within the confirmed phase and task scope.",
+        tags=["execution", "scope"],
+        status="active",
+        rejected=["Expanding into roadmap work mid-task"],
+        recommended_action="keep",
     )
     storage.append_audit_log(
         actor="codex-agent",
@@ -60,7 +88,9 @@ def test_mission_control_dashboard_renders_sections(tmp_path: Path) -> None:
         assert "Collaboration Modes" in body
         assert "Quick Publish adversarial" in body
         assert "Memory Candidate Queue" in body
+        assert "Memory Viewer" in body
         assert "Conflict Resolution Panel" in body
+        assert "Resolve Conflict" in body
         assert "Token Budget Monitor" in body
         assert "Audit Log Viewer" in body
         assert "Uncommitted Session" in body
@@ -134,5 +164,104 @@ def test_mission_control_rejects_invalid_payload_json(tmp_path: Path) -> None:
 
         assert response.status_code == 400
         assert "payload must be valid JSON" in body
+    finally:
+        storage.close()
+
+
+def test_memory_viewer_renders_memory_entries_and_filters(tmp_path: Path) -> None:
+    client, storage = build_client(tmp_path)
+    try:
+        response = client.get("/mission-control/memories", query_string={"session_id": "session-1"})
+        body = response.data.decode("utf-8")
+
+        assert response.status_code == 200
+        assert response.mimetype == "text/html"
+        assert "RelayCore Memory Viewer" in body
+        assert "Primary Database" in body
+        assert "Use SQLite for the MVP." in body
+        assert "Status Filters" in body
+        assert "Type Filters" in body
+        assert "Search Memory" in body
+        assert "All Sessions" in body
+        assert "Full Content" in body
+        assert "Structured Metadata" in body
+    finally:
+        storage.close()
+
+
+def test_memory_viewer_filters_by_type_and_query(tmp_path: Path) -> None:
+    client, storage = build_client(tmp_path)
+    try:
+        response = client.get(
+            "/mission-control/memories",
+            query_string={"session_id": "session-1", "type": "rule", "q": "scope"},
+        )
+        body = response.data.decode("utf-8")
+
+        assert response.status_code == 200
+        assert "No Scope Drift" in body
+        assert "Expanding into roadmap work mid-task" in body
+        assert "Primary Database" not in body
+    finally:
+        storage.close()
+
+
+def test_dashboard_supports_chinese_language_toggle(tmp_path: Path) -> None:
+    client, storage = build_client(tmp_path)
+    try:
+        response = client.get("/mission-control", query_string={"session_id": "session-1", "lang": "zh"})
+        body = response.data.decode("utf-8")
+
+        assert response.status_code == 200
+        assert 'lang="zh"' in body
+        assert "RelayCore 控制台" in body
+        assert "控制台" in body
+        assert "记忆浏览" in body
+        assert "命令发布" in body
+        assert 'name="lang" value="zh"' in body
+    finally:
+        storage.close()
+
+
+def test_memory_viewer_supports_chinese_language_toggle(tmp_path: Path) -> None:
+    client, storage = build_client(tmp_path)
+    try:
+        response = client.get(
+            "/mission-control/memories",
+            query_string={"session_id": "session-1", "lang": "zh"},
+        )
+        body = response.data.decode("utf-8")
+
+        assert response.status_code == 200
+        assert 'lang="zh"' in body
+        assert "RelayCore 记忆浏览" in body
+        assert "状态筛选" in body
+        assert "类型筛选" in body
+        assert "搜索记忆" in body
+        assert "完整内容" in body
+    finally:
+        storage.close()
+
+
+def test_mission_control_can_resolve_memory_conflicts(tmp_path: Path) -> None:
+    client, storage = build_client(tmp_path)
+    try:
+        response = client.post(
+            "/mission-control/memory-candidates/resolve",
+            data={
+                "session_id": "session-1",
+                "lang": "en",
+                "candidate_id": "candidate-conflict-1",
+                "created_by": "mission-control",
+                "status": "superseded",
+                "recommended_action": "supersede",
+            },
+        )
+        body = response.data.decode("utf-8")
+
+        assert response.status_code == 200
+        assert "Resolved candidate candidate-conflict-1 as superseded." in body
+        assert storage.get_memory_candidate("candidate-conflict-1").status == "superseded"
+        assert storage.list_audit_logs(resource_type="memory_candidate")[0].action == "memory_candidate_resolve"
     finally:
         storage.close()

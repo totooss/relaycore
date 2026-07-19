@@ -1,12 +1,14 @@
 from pathlib import Path
 import sys
+from threading import Thread
+import time
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from relaycore.command_bus import CommandBusService
-from relaycore.event_log import EventLogService
+from relaycore.event_log import EventLogService, format_sse
 from relaycore.memory_quality import MemoryQualityService
 from relaycore.server import create_app
 from relaycore.storage import RelayCoreStorage
@@ -161,6 +163,45 @@ def test_memory_quality_writes_review_events(client, memory_quality: MemoryQuali
     assert review_events[0]["content"]["conflicts_with"] == ["mem-active"]
 
 
+def test_memory_conflict_resolution_writes_events(client, memory_quality: MemoryQualityService, storage: RelayCoreStorage) -> None:
+    storage.create_memory_candidate(
+        candidate_id="mem-active",
+        proposed_by="codex",
+        runtime="codex",
+        session_id="session-1",
+        type="decision",
+        title="Primary Database",
+        content="Use SQLite for the MVP control plane.",
+        summary="Use SQLite for the MVP control plane.",
+        tags=["storage"],
+        status="active",
+    )
+    result = memory_quality.memory_propose(
+        proposed_by="claude",
+        type="decision",
+        title="Primary Database",
+        content="Use PostgreSQL for the MVP control plane.",
+        session_id="session-1",
+        runtime="claude",
+        relation_hint="supersede",
+        tags=["storage"],
+        candidate_id="mem-conflict",
+    )
+
+    assert result.conflicts_with == ["mem-active"]
+
+    resolved = client.post(
+        "/api/memory-candidates/mem-conflict/resolve",
+        json={"status": "superseded", "recommended_action": "supersede", "actor": "mission-control"},
+    )
+    assert resolved.status_code == 200
+    assert resolved.get_json()["candidate"]["status"] == "superseded"
+
+    events = client.get("/api/events", query_string={"session_id": "session-1"}).get_json()["events"]
+    event_types = [event["event_type"] for event in events]
+    assert "memory_conflict_resolved" in event_types
+
+
 def test_digest_is_created_every_ten_events(event_log: EventLogService, storage: RelayCoreStorage) -> None:
     for index in range(10):
         event_log.append_event(
@@ -174,3 +215,39 @@ def test_digest_is_created_every_ten_events(event_log: EventLogService, storage:
     assert len(digests) == 1
     assert digests[0].from_seq == 1
     assert digests[0].to_seq == 10
+
+
+def test_stream_events_stays_live_for_new_events(event_log: EventLogService) -> None:
+    def publish_later() -> None:
+        time.sleep(0.01)
+        event_log.broker.publish(
+            "session-1",
+            format_sse(
+                "event",
+                {
+                    "event": {
+                        "seq": 999,
+                        "agent_id": "codex",
+                        "event_type": "followup",
+                        "content": {"summary": "late event"},
+                    }
+                },
+                event_id=999,
+            ),
+        )
+
+    thread = Thread(target=publish_later)
+    thread.start()
+    try:
+        body = b"".join(
+            event_log.stream_events(
+                "session-1",
+                poll_timeout=0.05,
+                max_live_messages=1,
+                max_heartbeats=2,
+            )
+        ).decode("utf-8")
+        assert "event: event" in body
+        assert '"event_type":"followup"' in body
+    finally:
+        thread.join()

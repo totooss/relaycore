@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.0.0 - 2026-07-19
+
+### Added
+
+- Mission Control memory viewer with filtering, search, and bilingual UI support
+- memory candidate conflict resolution from the web UI and REST API
+- more stable SSE test coverage for live event streaming
+
+### Changed
+
+- repository contents were cleaned for public release packaging
+- README, roadmap, and release notes were rewritten for a publish-ready GitHub presentation
+- package metadata and versioning were aligned to the `1.0.0` public release
+
+### Validation
+
+- `pytest`: `55 passed`
+
 ## 0.1.3 - 2026-07-19
 
 ### Added

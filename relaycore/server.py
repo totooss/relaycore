@@ -1,5 +1,6 @@
 """Lightweight REST API server for RelayCore command bus operations."""
 
+from dataclasses import asdict
 import json
 import os
 from pathlib import Path
@@ -53,7 +54,7 @@ def create_app(
     if memory_service.event_log is None:
         memory_service.event_log = event_service
 
-    web_ui = MissionControlUI(repository, command_service, event_service)
+    web_ui = MissionControlUI(repository, command_service, event_service, memory_service)
     resolved_allowlist = (
         cors_allowlist
         if cors_allowlist is not None
@@ -100,7 +101,13 @@ class RelayCoreAPI:
             [
                 Rule("/", methods=["GET"], endpoint="mission_control"),
                 Rule("/mission-control", methods=["GET"], endpoint="mission_control"),
+                Rule("/mission-control/memories", methods=["GET"], endpoint="memory_view"),
                 Rule("/mission-control/commands", methods=["POST"], endpoint="mission_control_publish"),
+                Rule(
+                    "/mission-control/memory-candidates/resolve",
+                    methods=["POST"],
+                    endpoint="mission_control_resolve_candidate",
+                ),
                 Rule("/api/commands", methods=["POST"], endpoint="publish_command"),
                 Rule("/api/commands/pending", methods=["GET"], endpoint="list_pending_commands"),
                 Rule("/api/commands/<command_id>/claim", methods=["POST"], endpoint="claim_command"),
@@ -109,6 +116,11 @@ class RelayCoreAPI:
                 Rule("/api/events", methods=["POST"], endpoint="append_event"),
                 Rule("/api/events", methods=["GET"], endpoint="list_events"),
                 Rule("/api/events/stream", methods=["GET"], endpoint="stream_events"),
+                Rule(
+                    "/api/memory-candidates/<candidate_id>/resolve",
+                    methods=["POST"],
+                    endpoint="resolve_memory_candidate",
+                ),
                 Rule("/api/export", methods=["GET"], endpoint="export_snapshot"),
                 Rule("/api/backup", methods=["POST"], endpoint="backup_database"),
                 Rule("/metrics", methods=["GET"], endpoint="metrics"),
@@ -147,18 +159,44 @@ class RelayCoreAPI:
             return self._json_response({"error": error.description}, getattr(error, "code", 500))
 
     def _mission_control(self, request: Request) -> Response:
-        html = self.web_ui.render_dashboard(session_id=request.args.get("session_id"))
+        html = self.web_ui.render_dashboard(
+            session_id=request.args.get("session_id"),
+            lang=request.args.get("lang"),
+        )
+        return Response(html, status=200, mimetype="text/html")
+
+    def _memory_view(self, request: Request) -> Response:
+        html = self.web_ui.render_memory_page(
+            session_id=request.args.get("session_id"),
+            status=request.args.get("status"),
+            memory_type=request.args.get("type"),
+            query=request.args.get("q"),
+            lang=request.args.get("lang"),
+        )
         return Response(html, status=200, mimetype="text/html")
 
     def _mission_control_publish(self, request: Request) -> Response:
         form = request.form.to_dict()
         session_id = form.get("session_id")
+        lang = form.get("lang")
         try:
-            flash = self.web_ui.handle_command_form(form)
-            html = self.web_ui.render_dashboard(session_id=session_id, flash=flash)
+            flash = self.web_ui.handle_command_form(form, lang=lang)
+            html = self.web_ui.render_dashboard(session_id=session_id, flash=flash, lang=lang)
             return Response(html, status=200, mimetype="text/html")
         except ValueError as error:
-            html = self.web_ui.render_dashboard(session_id=session_id, error=str(error))
+            html = self.web_ui.render_dashboard(session_id=session_id, error=str(error), lang=lang)
+            return Response(html, status=400, mimetype="text/html")
+
+    def _mission_control_resolve_candidate(self, request: Request) -> Response:
+        form = request.form.to_dict()
+        session_id = form.get("session_id")
+        lang = form.get("lang")
+        try:
+            flash = self.web_ui.handle_conflict_form(form, lang=lang)
+            html = self.web_ui.render_dashboard(session_id=session_id, flash=flash, lang=lang)
+            return Response(html, status=200, mimetype="text/html")
+        except ValueError as error:
+            html = self.web_ui.render_dashboard(session_id=session_id, error=str(error), lang=lang)
             return Response(html, status=400, mimetype="text/html")
 
     def _publish_command(self, request: Request) -> Response:
@@ -240,6 +278,19 @@ class RelayCoreAPI:
             response["digest"] = serialize_digest(latest_digest)
         return self._json_response(response, 201)
 
+    def _resolve_memory_candidate(self, request: Request, candidate_id: str) -> Response:
+        payload = self._json_body(request)
+        candidate = self.memory_quality.resolve_candidate(
+            candidate_id,
+            status=payload.get("status", "active"),
+            actor=payload.get("actor", "api"),
+            runtime=payload.get("runtime"),
+            mode=payload.get("mode"),
+            recommended_action=payload.get("recommended_action"),
+            metadata=payload.get("metadata"),
+        )
+        return self._json_response({"candidate": asdict(candidate)}, 200)
+
     def _list_events(self, request: Request) -> Response:
         session_id = request.args.get("session_id")
         if not session_id:
@@ -265,7 +316,10 @@ class RelayCoreAPI:
         after_seq = int(after_seq_value) if after_seq_value is not None else None
         limit = int(request.args.get("limit", 50))
         self._require_access_token(request)
-        stream = self.event_log.stream_events(session_id, after_seq=after_seq, backlog_limit=limit)
+        stream_kwargs = {"after_seq": after_seq, "backlog_limit": limit}
+        if self.testing:
+            stream_kwargs.update({"poll_timeout": 0.05, "max_live_messages": 1, "max_heartbeats": 1})
+        stream = self.event_log.stream_events(session_id, **stream_kwargs)
         return Response(stream, status=200, mimetype="text/event-stream", direct_passthrough=True)
 
     def _export_snapshot(self, request: Request) -> Response:

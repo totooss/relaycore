@@ -4,11 +4,12 @@
 
 当前仓库包含：
 
-- 共享 sessions
+- 共享 sessions 与 memory candidates
 - 结构化 command relay
-- event timeline 与 digests
-- MCP-style memory tools
+- event timeline、digests 与审计日志
+- MCP-style memory / command tools
 - Mission Control UI
+- 记忆浏览与冲突处理界面
 - token、CORS、audit、redaction、export、backup 相关代码路径
 - 本地 memory 迁移能力
 
@@ -22,7 +23,7 @@
 - 增加结构化日志
 - 增加导入 / 导出审计摘要
 - 在 Mission Control 中加入导入预览与确认流程
-- 增加更多 Claude / Codex source adapters
+- 增加更多 runtime source adapters
 - 增加导入去重预览与回滚快照说明
 - 增加 runtime capability discovery
 - 增加 agent pool 路由过滤能力

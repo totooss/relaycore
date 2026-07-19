@@ -16,4 +16,3 @@ echomemory.db
 *.sqlite-shm
 *.sqlite-wal
 .codex/
-docs/decisions/*-migration-report.json
