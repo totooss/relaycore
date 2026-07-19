@@ -1,55 +1,37 @@
-# RelayCore Release Readiness
+# RelayCore Release Information
 
 Date: 2026-07-19
 
-## Overall Judgment
+## Current Published Release
 
-RelayCore is ready for a public GitHub MVP release.
+- Version: `v0.1.2`
+- Release page: [RelayCore v0.1.2](https://github.com/totooss/relaycore/releases/tag/v0.1.2)
+- Git tag: `v0.1.2`
 
-It is not yet fully ready for unattended production deployment in a multi-user environment without additional hardening.
-
-## Completion Assessment
-
-- Core control-plane functionality: 90%
-- Security baseline for local/internal deployment: 80%
-- Operator tooling and migration support: 80%
-- Packaging and public-release readiness: 85%
-- Production hardening for broader deployment: 60%
-
-## What Is Already Strong
+## Repository Contents
 
 - SQLite-backed shared memory and command store
-- Structured command lifecycle with permission levels
-- Shared event timeline with digest generation
+- structured command lifecycle with permission levels
+- append-only event timeline with digest generation
 - MCP-style memory and coordination tools
-- Mission Control operator UI
-- Baseline token protection, redaction, CORS, export, backup, and audit logging
-- Safe local memory migration with dry-run and skip classification
-- Automated tests across core modules
+- Mission Control web UI
+- token, redaction, CORS, export, backup, and audit-related code paths
+- local memory migration script for Claude/Codex layouts
+- automated tests across core modules
 
-## Remaining Gaps Before Broader Production Use
+## Validation Snapshot
 
-- Stronger deployment docs and environment management
-- More complete runtime-store and history import adapters
-- Richer metrics and structured observability
-- Explicit restore drills and operational runbooks
-- Stronger auth model for multi-user internet-facing deployment
+- Command check: `python -m relaycore --help`
+- Test command: `pytest`
+- Result on 2026-07-19: `46 passed`
 
-## Recommended Public Name
+## Version History In Repository
 
-RelayCore
+- `docs/GITHUB_RELEASE_v0.1.0.md`
+- `docs/GITHUB_RELEASE_v0.1.1.md`
+- `docs/GITHUB_RELEASE_v0.1.2.md`
 
-Reason:
+## Notes
 
-- short,
-- clearer for command-and-memory relay behavior,
-- better suited for a broader control-plane identity,
-- distinct from the earlier working title `RelayCore`.
-
-## Release Recommendation
-
-Publish now as:
-
-- `v0.1.1`
-- GitHub-first MVP release
-- clearly described as a local/self-hosted beta
+- Historical release documents remain in the repository as documentation files.
+- GitHub release entries can differ from documentation files if older releases are removed from the release page.

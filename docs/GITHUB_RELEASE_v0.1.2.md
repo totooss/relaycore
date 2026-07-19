@@ -1,6 +1,10 @@
 # RelayCore v0.1.2
 
-这是 RelayCore 完成内部实现全量统一命名后的发布版本。
+中文：
+这是 RelayCore 完成内部实现统一命名后的发布版本。
+
+English:
+This release consolidates the repository under the unified RelayCore product and package naming.
 
 ## 本次更新
 
@@ -9,6 +13,13 @@
 - 清理旧的兼容层表述，公开文档与仓库结构完全对齐
 - 保留对灵感来源 `EastSword/EchoMemory` 的明确致谢
 
+## What Changed
+
+- The internal Python package name is `relaycore`
+- Runtime code, tests, scripts, environment variables, headers, and metric prefixes use `RelayCore` / `relaycore`
+- Public documentation and repository structure use the same naming
+- Attribution to `EastSword/EchoMemory` remains explicit
+
 ## 当前能力
 
 - SQLite 共享记忆与 command store
@@ -16,8 +27,18 @@
 - append-only event timeline 与 digest
 - MCP-style memory / command tools
 - Mission Control Web UI
-- 安全基线：token、CORS、audit、redaction、export、backup
+- token、CORS、audit、redaction、export、backup 相关接口
 - 本地 Claude / Codex memory 迁移器
+
+## Repository Surfaces
+
+- SQLite-backed shared memory and command store
+- structured command relay
+- append-only event timeline and digests
+- MCP-style memory and command tools
+- Mission Control web UI
+- security-related endpoints for token, CORS, audit, export, and backup flows
+- local Claude/Codex memory migration scripts
 
 ## CLI
 
@@ -40,3 +61,8 @@
 
 - 本地自动化测试通过
 - 2026-07-19 当前状态：`46 passed`
+
+## Validation
+
+- Local automated tests passed
+- Status on July 19, 2026: `46 passed`

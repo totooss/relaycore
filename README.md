@@ -1,25 +1,13 @@
 # RelayCore
 
-> 面向 Codex、Claude 等本地 AI Runtime 的轻量级跨 Agent 记忆与命令中继控制面。
+> 面向 Codex、Claude 等本地 AI Runtime 的跨 Agent 记忆与命令中继控制面。
 
 RelayCore 是这个项目当前统一的公开名称与内部实现名称。  
 Python 包、CLI、文档与 GitHub 发布现已全部统一为 **RelayCore**。
 
-## 中文说明
+## Chinese
 
-- [构建路线图](docs/ROADMAP.md)
-- [发布就绪评估](docs/RELEASE_READINESS.md)
-- [当前 Release 文案](docs/GITHUB_RELEASE_v0.1.2.md)
-
-## 项目定位
-
-RelayCore 解决的是一个很具体的问题：
-
-- 多个 AI Runtime 需要共享同一条任务上下文
-- 共享记忆不能只靠聊天历史
-- 指令分发、事件时间线、审计、导出、迁移要在一个轻量系统里闭环
-
-当前版本已经具备：
+RelayCore 是一个面向本地或自托管 AI Runtime 的共享记忆与命令中继项目。当前仓库包含：
 
 - SQLite 共享存储
 - 结构化 command bus
@@ -27,17 +15,27 @@ RelayCore 解决的是一个很具体的问题：
 - digest 生成
 - MCP-style memory / command tools
 - Mission Control Web UI
-- 基础安全边界
-- 本地 Claude / Codex memory 迁移器
+- export、backup、metrics、audit、CORS、token 相关接口
+- 本地 Claude / Codex memory 迁移脚本
 
-## 完成度判断
+## English
 
-| 维度 | 当前判断 | 说明 |
-| --- | --- | --- |
-| 核心 MVP 完成度 | 高 | 存储、命令、事件、MCP、UI、安全、迁移链路已闭环 |
-| GitHub 发布就绪度 | 高 | 已具备 README、License、CLI、CI、Roadmap、Release 文案 |
-| 本地 / 内网试运行 | 可用 | 适合个人、多 Agent 协作、内部试点 |
-| 互联网生产硬化 | 中等 | 还需更强认证、部署模板、恢复演练、观测深度 |
+RelayCore is a shared memory and command relay project for local or self-hosted AI runtimes. This repository currently includes:
+
+- SQLite-backed shared storage
+- a structured command bus
+- an append-only event timeline
+- digest generation
+- MCP-style memory and command tools
+- a Mission Control web UI
+- export, backup, metrics, audit, CORS, and token-related surfaces
+- local Claude/Codex memory migration scripts
+
+## Documentation
+
+- [构建路线图](docs/ROADMAP.md)
+- [发布信息](docs/RELEASE_READINESS.md)
+- [当前 Release 文案](docs/GITHUB_RELEASE_v0.1.2.md)
 
 ## 与 EastSword/EchoMemory 的关系
 
@@ -49,24 +47,23 @@ RelayCore 解决的是一个很具体的问题：
 
 这里保留这层致谢与标记，是为了对来源保持清晰说明，而不是弱化本项目的独立实现。
 
-## 横向对比
+## Cross-Project Reference Table
 
-下表基于本仓库当前公开实现，以及 `EastSword/EchoMemory` 公开仓库描述进行对比：
+The table below is limited to public repository descriptions and publicly visible interfaces.
 
-| 维度 | RelayCore | EastSword/EchoMemory |
-| --- | --- | --- |
-| 公开定位 | 跨 Runtime 的记忆 + 命令中继控制面 | 多 Agent 共享记忆系统 |
-| 当前实现重点 | 记忆、命令、事件、Mission Control、安全、迁移 | 共享记忆产品方向与能力体系 |
-| 运行形态 | 本地 / 自托管 SQLite MVP | 公开仓库显示为多 Agent 共享记忆项目 |
-| 交互面 | REST API + MCP-style tools + Web UI + CLI | 以公开仓库说明为准 |
-| 运维能力 | export、backup、metrics、audit、CORS、token baseline | 以公开仓库说明为准 |
-| 数据迁移 | 已提供 Claude/Codex 本地 memory 迁移器 | 本仓库未直接复用其迁移实现 |
-| 当前阶段 | 可公开发布的 GitHub MVP | 公开项目 / inspiration source |
+| Project | Public description | Primary interfaces | Storage / runtime model in public materials | Public source |
+| --- | --- | --- | --- | --- |
+| RelayCore | Shared memory and command relay project for local or self-hosted AI runtimes | CLI, REST API, MCP-style tools, Web UI, migration script | SQLite-backed local/self-hosted Python project in this repository | [totooss/relaycore](https://github.com/totooss/relaycore) |
+| EastSword/EchoMemory | Multi-agent shared memory project | Public repository description and project page references | Public materials referenced in this repository do not expose a full implementation matrix here | [EastSword/EchoMemory](https://github.com/EastSword/EchoMemory) |
+| Mem0 | Universal memory layer for AI Agents | CLI, SDKs, managed/cloud materials, public repositories | Public README describes user/session/agent memory and managed service options | [mem0ai/mem0](https://github.com/mem0ai/mem0) |
+| OpenMemory | Cognitive memory engine for LLMs and agents | Python SDK, Node SDK, server, MCP, UI, connectors | Public README describes local-first deployment with SQLite/Postgres options | [CaviraOSS/OpenMemory](https://github.com/CaviraOSS/OpenMemory) |
+| Cognee | Open-source AI memory platform for agents | Python package, plugins, clients, knowledge-graph workflow, public docs | Public README describes a self-hosted knowledge graph engine with vector and graph components | [topoteretes/cognee](https://github.com/topoteretes/cognee) |
 
-说明：
+Notes:
 
-- `EastSword/EchoMemory` 的定位描述来源于其公开仓库页面：`多Agent共享记忆`
-- 上表只对公开可见定位和本仓库当前实现做对比，不臆测对方未公开的内部细节
+- RelayCore entries describe the current contents of this repository.
+- External project entries are paraphrased from public repository materials as of July 19, 2026.
+- This table is descriptive only and does not rank or score the projects.
 
 ## 构建导图
 
@@ -130,7 +127,7 @@ python scripts/migrate_local_memories.py --session-id local-memory-migration
 
 ## CLI
 
-对外推荐使用 `relaycore`：
+CLI entrypoints:
 
 ```bash
 relaycore init-db
@@ -144,7 +141,7 @@ relaycore export
 pytest
 ```
 
-当前本地验证状态（2026 年 7 月 19 日）：`46 passed`
+Current local test result on July 19, 2026: `46 passed`
 
 ## 仓库结构
 
