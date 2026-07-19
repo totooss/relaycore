@@ -8,15 +8,15 @@ Expose append-only event APIs and a live stream so multiple runtimes can observe
 
 - `AGENTS.md`
 - `docs/phases/phase-6-event-log-and-sse.md`
-- `echomemory/server.py`
-- `echomemory/event_log.py`
-- `echomemory/storage.py`
+- `relaycore/server.py`
+- `relaycore/event_log.py`
+- `relaycore/storage.py`
 
 ## Expected Modified Files
 
-- `echomemory/server.py`
-- `echomemory/event_log.py`
-- `echomemory/storage.py`
+- `relaycore/server.py`
+- `relaycore/event_log.py`
+- `relaycore/storage.py`
 - `tests/test_event_log.py`
 
 ## External Reference Scope

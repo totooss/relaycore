@@ -8,14 +8,14 @@ Build a lightweight HTML control plane for sessions, agent status, commands, liv
 
 - `AGENTS.md`
 - `docs/phases/phase-8-html-mission-control.md`
-- `echomemory/web_ui.py`
-- `echomemory/server.py`
-- `echomemory/storage.py`
+- `relaycore/web_ui.py`
+- `relaycore/server.py`
+- `relaycore/storage.py`
 
 ## Expected Modified Files
 
-- `echomemory/web_ui.py`
-- `echomemory/server.py`
+- `relaycore/web_ui.py`
+- `relaycore/server.py`
 - `tests/test_web_ui.py`
 
 ## External Reference Scope

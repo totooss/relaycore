@@ -6,14 +6,14 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from echomemory.command_bus import CommandBusService
-from echomemory.server import create_app
-from echomemory.storage import EchoMemoryStorage
+from relaycore.command_bus import CommandBusService
+from relaycore.server import create_app
+from relaycore.storage import RelayCoreStorage
 
 
 @pytest.fixture
-def storage(tmp_path: Path) -> EchoMemoryStorage:
-    repository = EchoMemoryStorage(tmp_path / "command-bus.db")
+def storage(tmp_path: Path) -> RelayCoreStorage:
+    repository = RelayCoreStorage(tmp_path / "command-bus.db")
     repository.create_session(
         session_id="session-1",
         name="Mission Control",
@@ -28,7 +28,7 @@ def storage(tmp_path: Path) -> EchoMemoryStorage:
 
 
 @pytest.fixture
-def service(storage: EchoMemoryStorage) -> CommandBusService:
+def service(storage: RelayCoreStorage) -> CommandBusService:
     return CommandBusService(storage)
 
 
@@ -54,7 +54,7 @@ def publish_command(client, **overrides):
     return client.post("/api/commands", json=payload)
 
 
-def test_publish_command_and_idempotency(client, storage: EchoMemoryStorage) -> None:
+def test_publish_command_and_idempotency(client, storage: RelayCoreStorage) -> None:
     first = publish_command(client)
     second = publish_command(client)
 
@@ -86,7 +86,7 @@ def test_pending_query_filters_by_permission_and_target(client) -> None:
     assert commands[0]["permission_level"] == "L2"
 
 
-def test_claim_complete_and_fail_flow(client, storage: EchoMemoryStorage) -> None:
+def test_claim_complete_and_fail_flow(client, storage: RelayCoreStorage) -> None:
     published = publish_command(client, idempotency_key="claim-flow")
     command_id = published.get_json()["command"]["command_id"]
 
@@ -149,7 +149,7 @@ def test_claim_complete_and_fail_flow(client, storage: EchoMemoryStorage) -> Non
     assert "command_fail" in actions
 
 
-def test_expired_lease_is_recovered(service: CommandBusService, storage: EchoMemoryStorage) -> None:
+def test_expired_lease_is_recovered(service: CommandBusService, storage: RelayCoreStorage) -> None:
     command = storage.create_command(
         command_id="cmd-expired",
         session_id="session-1",

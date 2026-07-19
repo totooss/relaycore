@@ -1,4 +1,4 @@
-"""SQLite schema migrations for EchoMemory."""
+"""SQLite schema migrations for RelayCore."""
 
 import argparse
 from datetime import datetime, timezone
@@ -250,11 +250,11 @@ def list_user_tables(connection: sqlite3.Connection) -> Iterable[str]:
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Initialize the EchoMemory SQLite schema.")
+    parser = argparse.ArgumentParser(description="Initialize the RelayCore SQLite schema.")
     parser.add_argument(
         "--db",
         default=str(DEFAULT_DB_PATH),
-        help="SQLite database path. Defaults to echomemory.db in the current working directory.",
+        help="SQLite database path. Defaults to relaycore.db in the current working directory.",
     )
     return parser
 
@@ -263,7 +263,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_arg_parser()
     args = parser.parse_args(argv)
     database_path = initialize_database(args.db)
-    print("Initialized EchoMemory database at {}".format(database_path))
+    print("Initialized RelayCore database at {}".format(database_path))
     return 0
 
 

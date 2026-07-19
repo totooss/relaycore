@@ -8,7 +8,7 @@ from typing import Any, Dict, Generator, List, Optional
 from uuid import uuid4
 
 from .models import AgentEventRecord, SessionDigestRecord
-from .storage import EchoMemoryStorage
+from .storage import RelayCoreStorage
 from .token_budget import redact_structure
 
 DIGEST_BATCH_SIZE = 10
@@ -65,7 +65,7 @@ class EventStreamBroker:
 class EventLogService:
     """Coordinate event appends, compact reads, digests, and SSE output."""
 
-    def __init__(self, storage: EchoMemoryStorage, broker: Optional[EventStreamBroker] = None) -> None:
+    def __init__(self, storage: RelayCoreStorage, broker: Optional[EventStreamBroker] = None) -> None:
         self.storage = storage
         self.broker = broker or EventStreamBroker()
 

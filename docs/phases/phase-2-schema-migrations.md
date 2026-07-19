@@ -12,8 +12,8 @@ Create the SQLite migration layer for sessions, commands, events, digests, memor
 
 ## Expected Modified Files
 
-- `echomemory/migrations.py`
-- `echomemory/storage.py`
+- `relaycore/migrations.py`
+- `relaycore/storage.py`
 - `tests/test_migrations.py`
 
 ## External Reference Scope
@@ -47,5 +47,5 @@ Create the SQLite migration layer for sessions, commands, events, digests, memor
 
 ```bash
 pytest tests/test_migrations.py
-python -m echomemory.migrations
+python -m relaycore.migrations
 ```

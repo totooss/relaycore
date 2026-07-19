@@ -4,7 +4,7 @@ Date: 2026-07-19
 
 ## Verified
 
-- Claude Code and Codex CLI share the same EchoMemory MCP workflow.
+- Claude Code and Codex CLI share the same RelayCore MCP workflow.
 - One session can carry a shared event timeline across runtimes.
 - Mission Control can publish commands to a selected runtime / agent.
 - Commands can be claimed, completed, and failed.

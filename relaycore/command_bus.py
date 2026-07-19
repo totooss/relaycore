@@ -1,4 +1,4 @@
-"""Command bus service logic for EchoMemory."""
+"""Command bus service logic for RelayCore."""
 
 from dataclasses import asdict
 from datetime import datetime, timedelta, timezone
@@ -7,7 +7,7 @@ from uuid import uuid4
 
 from .models import CommandRecord
 from .runtime_adapters import CollaborationModeRegistry
-from .storage import EchoMemoryStorage, row_to_command, utc_now
+from .storage import RelayCoreStorage, row_to_command, utc_now
 
 if TYPE_CHECKING:
     from .event_log import EventLogService
@@ -53,7 +53,7 @@ class CommandBusService:
 
     def __init__(
         self,
-        storage: EchoMemoryStorage,
+        storage: RelayCoreStorage,
         event_log: Optional["EventLogService"] = None,
         collaboration_modes: Optional[CollaborationModeRegistry] = None,
     ) -> None:

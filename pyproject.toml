@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "relaycore"
-version = "0.1.1"
+version = "0.1.2"
 description = "A lightweight cross-agent memory and command relay for local AI runtimes."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -33,10 +33,10 @@ dev = [
 ]
 
 [project.scripts]
-relaycore = "echomemory.cli:main"
+relaycore = "relaycore.cli:main"
 
 [tool.setuptools]
-packages = ["echomemory"]
+packages = ["relaycore"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

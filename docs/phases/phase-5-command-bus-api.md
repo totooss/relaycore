@@ -8,14 +8,14 @@ Expose REST endpoints for publishing, claiming, completing, failing, and recover
 
 - `AGENTS.md`
 - `docs/phases/phase-5-command-bus-api.md`
-- `echomemory/storage.py`
-- `echomemory/server.py`
-- `echomemory/command_bus.py`
+- `relaycore/storage.py`
+- `relaycore/server.py`
+- `relaycore/command_bus.py`
 
 ## Expected Modified Files
 
-- `echomemory/server.py`
-- `echomemory/command_bus.py`
+- `relaycore/server.py`
+- `relaycore/command_bus.py`
 - `tests/test_command_bus.py`
 
 ## External Reference Scope

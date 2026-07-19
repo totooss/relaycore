@@ -4,7 +4,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from echomemory.storage import EchoMemoryStorage
+from relaycore.storage import RelayCoreStorage
 from scripts.migrate_local_memories import MigrationOptions, collect_entries, migrate
 
 
@@ -134,9 +134,9 @@ def test_migrate_supports_dry_run_without_creating_database(tmp_path: Path) -> N
     assert not db_path.exists()
 
 
-def test_migrate_imports_entries_into_echomemory(tmp_path: Path) -> None:
+def test_migrate_imports_entries_into_relaycore(tmp_path: Path) -> None:
     seed_home(tmp_path)
-    db_path = tmp_path / "echomemory.db"
+    db_path = tmp_path / "relaycore.db"
 
     report = migrate(
         db_path=db_path,
@@ -147,7 +147,7 @@ def test_migrate_imports_entries_into_echomemory(tmp_path: Path) -> None:
 
     assert report.dry_run is False
     assert report.imported_count == len(report.entries)
-    storage = EchoMemoryStorage(db_path)
+    storage = RelayCoreStorage(db_path)
     try:
         session = storage.get_session("import-session")
         assert session.metadata["last_commit_runtime"] == "codex"

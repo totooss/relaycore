@@ -11,12 +11,12 @@ from typing import Dict, Iterable, List, Sequence
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from echomemory.mcp_server import EchoMemoryMCPServer
-from echomemory.storage import EchoMemoryStorage
-from echomemory.token_budget import SENSITIVE_VALUE_RE, TOKEN_REDACTION, redact_text
+from relaycore.mcp_server import RelayCoreMCPServer
+from relaycore.storage import RelayCoreStorage
+from relaycore.token_budget import SENSITIVE_VALUE_RE, TOKEN_REDACTION, redact_text
 
 
-DEFAULT_DB_PATH = Path(__file__).resolve().parent.parent / "echomemory.db"
+DEFAULT_DB_PATH = Path(__file__).resolve().parent.parent / "relaycore.db"
 DEFAULT_SESSION_ID = "local-memory-migration-2026-07-19"
 SENSITIVE_ASSIGNMENT_RE = re.compile(
     r"(?i)\b\S*(api[_-]?key|token|secret|password|passwd|access[_-]?token|refresh[_-]?token|private[_-]?key|client[_-]?secret)\S*\s*[:=]\s*\S+"
@@ -480,8 +480,8 @@ def migrate(
             imported_count=0 if dry_run else len(entries),
         )
 
-    storage = EchoMemoryStorage(db_path)
-    server = EchoMemoryMCPServer(storage=storage)
+    storage = RelayCoreStorage(db_path)
+    server = RelayCoreMCPServer(storage=storage)
     try:
         server.call_tool(
             "memory_begin_task",
@@ -490,7 +490,7 @@ def migrate(
                 "runtime": "codex",
                 "agent_id": "codex-memory-migrator",
                 "name": "Local Memory Migration",
-                "goal": "Import safe local Claude/Codex memory into EchoMemory",
+                "goal": "Import safe local Claude/Codex memory into RelayCore",
                 "metadata": {"source": "local-memory-migration-script"},
             },
         )
@@ -534,11 +534,11 @@ def migrate(
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Migrate safe local Claude/Codex memories into EchoMemory.")
-    parser.add_argument("--db", default=str(DEFAULT_DB_PATH), help="Target EchoMemory SQLite path.")
-    parser.add_argument("--session-id", default=DEFAULT_SESSION_ID, help="Target EchoMemory session id.")
+    parser = argparse.ArgumentParser(description="Migrate safe local Claude/Codex memories into RelayCore.")
+    parser.add_argument("--db", default=str(DEFAULT_DB_PATH), help="Target RelayCore SQLite path.")
+    parser.add_argument("--session-id", default=DEFAULT_SESSION_ID, help="Target RelayCore session id.")
     parser.add_argument("--home", default=str(Path.home()), help="Home directory to scan for Claude/Codex memory sources.")
-    parser.add_argument("--dry-run", action="store_true", help="Inspect and report importable memories without writing to EchoMemory.")
+    parser.add_argument("--dry-run", action="store_true", help="Inspect and report importable memories without writing to RelayCore.")
     parser.add_argument("--include-history", action="store_true", help="Include summarized Claude/Codex history as importable memory.")
     parser.add_argument("--include-runtime-store", action="store_true", help="Include supported Codex runtime store summaries when present.")
     parser.add_argument("--report", help="Optional JSON report path.")

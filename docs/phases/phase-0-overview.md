@@ -7,7 +7,7 @@ Establish the execution scaffold for the project, map the current repository sta
 ## Input Files
 
 - `AGENTS.md`
-- `docs/ECHOMEMORY_CROSS_AGENT_BUILD_NO_OBSIDIAN.md`
+- `docs/RELAYCORE_CROSS_AGENT_BUILD_NO_OBSIDIAN.md`
 - `docs/CODEX_EXECUTION_GUIDE_NO_OBSIDIAN.md`
 
 ## Expected Modified Files

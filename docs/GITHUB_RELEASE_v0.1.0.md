@@ -14,9 +14,9 @@ RelayCore is a lightweight cross-agent memory and command relay for local AI run
 
 ## Included CLI
 
-- `python -m echomemory init-db`
-- `python -m echomemory serve`
-- `python -m echomemory export`
+- `python -m relaycore init-db`
+- `python -m relaycore serve`
+- `python -m relaycore export`
 
 ## Validation
 
@@ -26,4 +26,4 @@ RelayCore is a lightweight cross-agent memory and command relay for local AI run
 ## Notes
 
 - Public project name: `RelayCore`
-- Internal Python package name remains `echomemory` for compatibility
+- Internal Python package name: `relaycore`

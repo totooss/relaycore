@@ -3,13 +3,13 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from echomemory.memory_quality import MemoryQualityService
-from echomemory.server import create_app
-from echomemory.storage import EchoMemoryStorage
+from relaycore.memory_quality import MemoryQualityService
+from relaycore.server import create_app
+from relaycore.storage import RelayCoreStorage
 
 
 def build_client(tmp_path: Path):
-    storage = EchoMemoryStorage(tmp_path / "web-ui.db")
+    storage = RelayCoreStorage(tmp_path / "web-ui.db")
     storage.create_session(
         session_id="session-1",
         name="Mission Board",

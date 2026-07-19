@@ -5,16 +5,16 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from echomemory.command_bus import CommandBusService
-from echomemory.event_log import EventLogService
-from echomemory.memory_quality import MemoryQualityService
-from echomemory.server import create_app
-from echomemory.storage import EchoMemoryStorage
+from relaycore.command_bus import CommandBusService
+from relaycore.event_log import EventLogService
+from relaycore.memory_quality import MemoryQualityService
+from relaycore.server import create_app
+from relaycore.storage import RelayCoreStorage
 
 
 @pytest.fixture
-def storage(tmp_path: Path) -> EchoMemoryStorage:
-    repository = EchoMemoryStorage(tmp_path / "event-log.db")
+def storage(tmp_path: Path) -> RelayCoreStorage:
+    repository = RelayCoreStorage(tmp_path / "event-log.db")
     repository.create_session(
         session_id="session-1",
         name="Timeline Session",
@@ -29,17 +29,17 @@ def storage(tmp_path: Path) -> EchoMemoryStorage:
 
 
 @pytest.fixture
-def event_log(storage: EchoMemoryStorage) -> EventLogService:
+def event_log(storage: RelayCoreStorage) -> EventLogService:
     return EventLogService(storage)
 
 
 @pytest.fixture
-def command_bus(storage: EchoMemoryStorage, event_log: EventLogService) -> CommandBusService:
+def command_bus(storage: RelayCoreStorage, event_log: EventLogService) -> CommandBusService:
     return CommandBusService(storage, event_log=event_log)
 
 
 @pytest.fixture
-def memory_quality(storage: EchoMemoryStorage, event_log: EventLogService) -> MemoryQualityService:
+def memory_quality(storage: RelayCoreStorage, event_log: EventLogService) -> MemoryQualityService:
     return MemoryQualityService(storage, event_log=event_log)
 
 
@@ -50,7 +50,7 @@ def client(command_bus: CommandBusService, event_log: EventLogService, memory_qu
     return app.test_client()
 
 
-def test_post_and_get_events_round_trip(client, storage: EchoMemoryStorage) -> None:
+def test_post_and_get_events_round_trip(client, storage: RelayCoreStorage) -> None:
     created = client.post(
         "/api/events",
         json={
@@ -129,7 +129,7 @@ def test_command_lifecycle_writes_events(client) -> None:
     assert "command_completed" in event_types
 
 
-def test_memory_quality_writes_review_events(client, memory_quality: MemoryQualityService, storage: EchoMemoryStorage) -> None:
+def test_memory_quality_writes_review_events(client, memory_quality: MemoryQualityService, storage: RelayCoreStorage) -> None:
     storage.create_memory_candidate(
         candidate_id="mem-active",
         proposed_by="codex",
@@ -161,7 +161,7 @@ def test_memory_quality_writes_review_events(client, memory_quality: MemoryQuali
     assert review_events[0]["content"]["conflicts_with"] == ["mem-active"]
 
 
-def test_digest_is_created_every_ten_events(event_log: EventLogService, storage: EchoMemoryStorage) -> None:
+def test_digest_is_created_every_ten_events(event_log: EventLogService, storage: RelayCoreStorage) -> None:
     for index in range(10):
         event_log.append_event(
             session_id="session-1",

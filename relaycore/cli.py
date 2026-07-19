@@ -10,7 +10,7 @@ from werkzeug.serving import run_simple
 
 from .migrations import initialize_database
 from .server import create_app
-from .storage import DEFAULT_DB_PATH, EchoMemoryStorage, resolve_database_path
+from .storage import DEFAULT_DB_PATH, RelayCoreStorage, resolve_database_path
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -62,7 +62,7 @@ def command_serve(
 
 
 def command_export(db_path: str, *, redact: bool) -> int:
-    storage = EchoMemoryStorage(resolve_database_path(db_path))
+    storage = RelayCoreStorage(resolve_database_path(db_path))
     try:
         snapshot = storage.export_snapshot(redact=redact)
         print(json.dumps(snapshot, ensure_ascii=True, indent=2, sort_keys=True))
@@ -80,7 +80,7 @@ def main() -> int:
             db_path=args.db,
             host=args.host,
             port=args.port,
-            access_token=args.access_token or os.environ.get("ECHOMEMORY_ACCESS_TOKEN"),
+            access_token=args.access_token or os.environ.get("RELAYCORE_ACCESS_TOKEN"),
             cors_origins=args.cors_origin,
             backup_dir=args.backup_dir,
         )

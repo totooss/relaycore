@@ -8,13 +8,13 @@ Implement the memory quality pipeline so proposed memories are normalized, dedup
 
 - `AGENTS.md`
 - `docs/phases/phase-4-memory-quality.md`
-- `echomemory/storage.py`
-- `echomemory/memory_quality.py`
+- `relaycore/storage.py`
+- `relaycore/memory_quality.py`
 
 ## Expected Modified Files
 
-- `echomemory/memory_quality.py`
-- `echomemory/storage.py`
+- `relaycore/memory_quality.py`
+- `relaycore/storage.py`
 - `tests/test_memory_quality.py`
 
 ## External Reference Scope

@@ -2,14 +2,14 @@
 
 > 面向 Codex、Claude 等本地 AI Runtime 的轻量级跨 Agent 记忆与命令中继控制面。
 
-RelayCore 是这个项目的公开名称。  
-为了兼容当前实现，内部 Python 包名仍然保留为 `echomemory`，但对外文档、CLI 名称和 GitHub 发布均以 **RelayCore** 为准。
+RelayCore 是这个项目当前统一的公开名称与内部实现名称。  
+Python 包、CLI、文档与 GitHub 发布现已全部统一为 **RelayCore**。
 
 ## 中文说明
 
 - [构建路线图](docs/ROADMAP.md)
 - [发布就绪评估](docs/RELEASE_READINESS.md)
-- [当前 Release 文案](docs/GITHUB_RELEASE_v0.1.1.md)
+- [当前 Release 文案](docs/GITHUB_RELEASE_v0.1.2.md)
 
 ## 项目定位
 
@@ -101,11 +101,11 @@ relaycore serve --host 127.0.0.1 --port 8080
 
 - `http://127.0.0.1:8080/mission-control`
 
-兼容方式仍然可用：
+也可以直接使用模块入口：
 
 ```bash
-python -m echomemory init-db
-python -m echomemory serve --host 127.0.0.1 --port 8080
+python -m relaycore init-db
+python -m relaycore serve --host 127.0.0.1 --port 8080
 ```
 
 ## Memory 迁移
@@ -148,7 +148,7 @@ pytest
 
 ## 仓库结构
 
-- `echomemory/`: 核心实现包
+- `relaycore/`: 核心实现包
 - `scripts/`: 迁移与辅助脚本
 - `tests/`: 自动化测试
 - `docs/`: 路线图、发布评估、阶段文档与决策记录

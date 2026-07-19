@@ -48,7 +48,7 @@ Validate the full MVP with focused automated tests and lightweight integration c
 ## Acceptance Criteria
 
 - Automated tests cover the major storage, API, MCP, and UI surfaces.
-- Smoke tests verify Codex and Claude can attach to one shared EchoMemory workflow.
+- Smoke tests verify Codex and Claude can attach to one shared RelayCore workflow.
 - The MVP acceptance checklist can be reviewed against actual implemented behavior.
 - Any remaining gaps are explicitly documented.
 

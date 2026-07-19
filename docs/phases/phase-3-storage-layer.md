@@ -8,13 +8,13 @@ Build the storage abstraction over the new schema so sessions, commands, events,
 
 - `AGENTS.md`
 - `docs/phases/phase-3-storage-layer.md`
-- `echomemory/migrations.py`
-- `echomemory/storage.py`
+- `relaycore/migrations.py`
+- `relaycore/storage.py`
 
 ## Expected Modified Files
 
-- `echomemory/storage.py`
-- `echomemory/models.py`
+- `relaycore/storage.py`
+- `relaycore/models.py`
 - `tests/test_storage.py`
 
 ## External Reference Scope

@@ -3,15 +3,15 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from echomemory.command_bus import CommandBusService
-from echomemory.event_log import EventLogService
-from echomemory.runtime_adapters import CollaborationModeRegistry
-from echomemory.server import create_app
-from echomemory.storage import EchoMemoryStorage
+from relaycore.command_bus import CommandBusService
+from relaycore.event_log import EventLogService
+from relaycore.runtime_adapters import CollaborationModeRegistry
+from relaycore.server import create_app
+from relaycore.storage import RelayCoreStorage
 
 
 def build_stack(tmp_path: Path):
-    storage = EchoMemoryStorage(tmp_path / "collaboration.db")
+    storage = RelayCoreStorage(tmp_path / "collaboration.db")
     storage.create_session(
         session_id="session-1",
         name="Collaboration Session",

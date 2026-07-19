@@ -4,8 +4,8 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from echomemory.migrations import MIGRATION_NAME, apply_migrations, initialize_database
-from echomemory.storage import bootstrap_database, connect_database
+from relaycore.migrations import MIGRATION_NAME, apply_migrations, initialize_database
+from relaycore.storage import bootstrap_database, connect_database
 
 
 EXPECTED_TABLES = {
@@ -36,7 +36,7 @@ def fetch_table_names(connection: sqlite3.Connection) -> set[str]:
 
 
 def test_initialize_database_creates_expected_tables(tmp_path: Path) -> None:
-    database_path = tmp_path / "echomemory.db"
+    database_path = tmp_path / "relaycore.db"
 
     resolved = initialize_database(str(database_path))
 

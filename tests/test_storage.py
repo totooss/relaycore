@@ -5,19 +5,19 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from echomemory.storage import EchoMemoryStorage, InvalidTransitionError, NotFoundError, ValidationError
+from relaycore.storage import RelayCoreStorage, InvalidTransitionError, NotFoundError, ValidationError
 
 
 @pytest.fixture
-def storage(tmp_path: Path) -> EchoMemoryStorage:
-    repository = EchoMemoryStorage(tmp_path / "storage.db")
+def storage(tmp_path: Path) -> RelayCoreStorage:
+    repository = RelayCoreStorage(tmp_path / "storage.db")
     try:
         yield repository
     finally:
         repository.close()
 
 
-def create_session(repository: EchoMemoryStorage, session_id: str = "session-1") -> None:
+def create_session(repository: RelayCoreStorage, session_id: str = "session-1") -> None:
     repository.create_session(
         session_id=session_id,
         name="Mission Alpha",
@@ -28,7 +28,7 @@ def create_session(repository: EchoMemoryStorage, session_id: str = "session-1")
     )
 
 
-def test_session_crud_and_digest_reads(storage: EchoMemoryStorage) -> None:
+def test_session_crud_and_digest_reads(storage: RelayCoreStorage) -> None:
     create_session(storage)
 
     session = storage.get_session("session-1")
@@ -55,7 +55,7 @@ def test_session_crud_and_digest_reads(storage: EchoMemoryStorage) -> None:
         storage.get_session("session-1")
 
 
-def test_command_status_transitions_are_validated(storage: EchoMemoryStorage) -> None:
+def test_command_status_transitions_are_validated(storage: RelayCoreStorage) -> None:
     create_session(storage)
     command = storage.create_command(
         command_id="cmd-1",
@@ -92,7 +92,7 @@ def test_command_status_transitions_are_validated(storage: EchoMemoryStorage) ->
         storage.update_command_status("cmd-1", "completed")
 
 
-def test_event_append_and_ordered_queries(storage: EchoMemoryStorage) -> None:
+def test_event_append_and_ordered_queries(storage: RelayCoreStorage) -> None:
     create_session(storage)
 
     first = storage.append_event(
@@ -116,7 +116,7 @@ def test_event_append_and_ordered_queries(storage: EchoMemoryStorage) -> None:
     assert events[1].metadata["severity"] == "low"
 
 
-def test_memory_candidate_occurrence_cluster_and_audit_flows(storage: EchoMemoryStorage) -> None:
+def test_memory_candidate_occurrence_cluster_and_audit_flows(storage: RelayCoreStorage) -> None:
     create_session(storage)
 
     candidate = storage.create_memory_candidate(
@@ -178,7 +178,7 @@ def test_memory_candidate_occurrence_cluster_and_audit_flows(storage: EchoMemory
     assert storage.list_audit_logs(resource_type="memory_candidate")[0].metadata["cluster"] == "cluster-1"
 
 
-def test_invalid_memory_candidate_status_is_rejected(storage: EchoMemoryStorage) -> None:
+def test_invalid_memory_candidate_status_is_rejected(storage: RelayCoreStorage) -> None:
     create_session(storage)
 
     with pytest.raises(ValidationError):

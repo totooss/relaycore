@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from uuid import uuid4
 
 from .models import MemoryCandidateRecord
-from .storage import EchoMemoryStorage, utc_now
+from .storage import RelayCoreStorage, utc_now
 
 if TYPE_CHECKING:
     from .event_log import EventLogService
@@ -166,7 +166,7 @@ class MemoryProposalResult:
 class MemoryQualityService:
     """Apply normalization, dedupe, and conflict checks before persistence."""
 
-    def __init__(self, storage: EchoMemoryStorage, event_log: Optional["EventLogService"] = None) -> None:
+    def __init__(self, storage: RelayCoreStorage, event_log: Optional["EventLogService"] = None) -> None:
         self.storage = storage
         self.event_log = event_log
 

@@ -1,4 +1,4 @@
-"""Lightweight REST API server for EchoMemory command bus operations."""
+"""Lightweight REST API server for RelayCore command bus operations."""
 
 import json
 import os
@@ -15,7 +15,7 @@ from .command_bus import (
 from .event_log import EventLogService, serialize_digest, serialize_event
 from .memory_quality import MemoryQualityService
 from .web_ui import MissionControlUI
-from .storage import EchoMemoryStorage, NotFoundError, StorageError
+from .storage import RelayCoreStorage, NotFoundError, StorageError
 from .token_budget import estimate_payload_tokens
 from werkzeug.exceptions import HTTPException, MethodNotAllowed, NotFound
 from werkzeug.routing import Map, Rule
@@ -26,14 +26,14 @@ from werkzeug.wrappers import Request, Response
 def create_app(
     *,
     db_path: Optional[str] = None,
-    storage: Optional[EchoMemoryStorage] = None,
+    storage: Optional[RelayCoreStorage] = None,
     command_bus: Optional[CommandBusService] = None,
     event_log: Optional[EventLogService] = None,
     memory_quality: Optional[MemoryQualityService] = None,
     access_token: Optional[str] = None,
     cors_allowlist: Optional[list] = None,
     backup_dir: Optional[str] = None,
-) -> "EchoMemoryAPI":
+) -> "RelayCoreAPI":
     repository = storage
     if repository is None:
         if command_bus is not None:
@@ -43,7 +43,7 @@ def create_app(
         elif memory_quality is not None:
             repository = memory_quality.storage
         else:
-            repository = EchoMemoryStorage(db_path)
+            repository = RelayCoreStorage(db_path)
 
     event_service = event_log or EventLogService(repository)
     command_service = command_bus or CommandBusService(repository, event_log=event_service)
@@ -57,11 +57,11 @@ def create_app(
     resolved_allowlist = (
         cors_allowlist
         if cors_allowlist is not None
-        else _split_env_list(os.environ.get("ECHOMEMORY_CORS_ALLOWLIST"))
+        else _split_env_list(os.environ.get("RELAYCORE_CORS_ALLOWLIST"))
     )
-    resolved_token = access_token if access_token is not None else os.environ.get("ECHOMEMORY_ACCESS_TOKEN")
-    resolved_backup_dir = backup_dir or os.environ.get("ECHOMEMORY_BACKUP_DIR")
-    return EchoMemoryAPI(
+    resolved_token = access_token if access_token is not None else os.environ.get("RELAYCORE_ACCESS_TOKEN")
+    resolved_backup_dir = backup_dir or os.environ.get("RELAYCORE_BACKUP_DIR")
+    return RelayCoreAPI(
         command_service,
         event_service,
         memory_service,
@@ -73,7 +73,7 @@ def create_app(
     )
 
 
-class EchoMemoryAPI:
+class RelayCoreAPI:
     """A tiny WSGI app for the command-bus REST surface."""
 
     def __init__(
@@ -82,7 +82,7 @@ class EchoMemoryAPI:
         event_log: EventLogService,
         memory_quality: MemoryQualityService,
         web_ui: MissionControlUI,
-        storage: EchoMemoryStorage,
+        storage: RelayCoreStorage,
         access_token: Optional[str] = None,
         cors_allowlist: Optional[list] = None,
         backup_dir: Optional[str] = None,
@@ -320,7 +320,7 @@ class EchoMemoryAPI:
         if not self._origin_allowed(request, origin):
             return self._json_response({"error": "origin not allowed"}, 403)
         response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-EchoMemory-Access-Token"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-RelayCore-Access-Token"
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
         response.headers["Vary"] = "Origin"
         return response
@@ -334,7 +334,7 @@ class EchoMemoryAPI:
     def _require_access_token(self, request: Request) -> None:
         if not self.access_token:
             return
-        provided = request.headers.get("X-EchoMemory-Access-Token")
+        provided = request.headers.get("X-RelayCore-Access-Token")
         if not provided and request.headers.get("Authorization", "").startswith("Bearer "):
             provided = request.headers.get("Authorization", "")[7:].strip()
         if not provided:
@@ -345,25 +345,25 @@ class EchoMemoryAPI:
     def _build_metrics_lines(self, request: Request) -> list:
         session_id = request.args.get("session_id")
         lines = [
-            "# EchoMemory metrics",
-            "echomemory_sessions_total {}".format(len(self.storage.list_sessions())),
-            "echomemory_commands_total {}".format(len(self.storage.list_commands(limit=1000))),
-            "echomemory_events_total {}".format(self._count_rows("agent_events")),
-            "echomemory_digests_total {}".format(self._count_rows("session_digests")),
-            "echomemory_candidates_total {}".format(self._count_rows("memory_candidates")),
-            "echomemory_agent_states_total {}".format(self._count_rows("agent_states")),
-            "echomemory_audit_logs_total {}".format(self._count_rows("audit_logs")),
+            "# RelayCore metrics",
+            "relaycore_sessions_total {}".format(len(self.storage.list_sessions())),
+            "relaycore_commands_total {}".format(len(self.storage.list_commands(limit=1000))),
+            "relaycore_events_total {}".format(self._count_rows("agent_events")),
+            "relaycore_digests_total {}".format(self._count_rows("session_digests")),
+            "relaycore_candidates_total {}".format(self._count_rows("memory_candidates")),
+            "relaycore_agent_states_total {}".format(self._count_rows("agent_states")),
+            "relaycore_audit_logs_total {}".format(self._count_rows("audit_logs")),
         ]
         for status in ("pending", "claimed", "completed", "failed"):
             lines.append(
-                'echomemory_commands_status_total{{status="{}"}} {}'.format(
+                'relaycore_commands_status_total{{status="{}"}} {}'.format(
                     status,
                     len(self.storage.list_commands(status=status, limit=1000)),
                 )
             )
         for status in ("pending", "active", "merged", "corrected", "superseded", "archived", "rejected"):
             lines.append(
-                'echomemory_candidates_status_total{{status="{}"}} {}'.format(
+                'relaycore_candidates_status_total{{status="{}"}} {}'.format(
                     status,
                     len(self.storage.list_memory_candidates(status=status, limit=1000)),
                 )
@@ -375,11 +375,11 @@ class EchoMemoryAPI:
             digests = self.storage.list_session_digests(session_id, limit=1000)
             lines.extend(
                 [
-                    'echomemory_session_commands{{session_id="{}"}} {}'.format(session_id, len(commands)),
-                    'echomemory_session_events{{session_id="{}"}} {}'.format(session_id, len(events)),
-                    'echomemory_session_candidates{{session_id="{}"}} {}'.format(session_id, len(candidates)),
-                    'echomemory_session_digests{{session_id="{}"}} {}'.format(session_id, len(digests)),
-                    'echomemory_session_token_estimate{{session_id="{}"}} {}'.format(
+                    'relaycore_session_commands{{session_id="{}"}} {}'.format(session_id, len(commands)),
+                    'relaycore_session_events{{session_id="{}"}} {}'.format(session_id, len(events)),
+                    'relaycore_session_candidates{{session_id="{}"}} {}'.format(session_id, len(candidates)),
+                    'relaycore_session_digests{{session_id="{}"}} {}'.format(session_id, len(digests)),
+                    'relaycore_session_token_estimate{{session_id="{}"}} {}'.format(
                         session_id,
                         estimate_payload_tokens(
                             [command.payload for command in commands[:5]],

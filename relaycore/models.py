@@ -1,4 +1,4 @@
-"""Typed storage records used by the EchoMemory repository layer."""
+"""Typed storage records used by the RelayCore repository layer."""
 
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional

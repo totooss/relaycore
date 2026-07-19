@@ -1,4 +1,4 @@
-"""Storage helpers and repository implementation for EchoMemory."""
+"""Storage helpers and repository implementation for RelayCore."""
 
 from datetime import datetime, timezone
 import json
@@ -22,7 +22,7 @@ from .token_budget import redact_structure
 
 PathLike = Union[str, os.PathLike[str]]
 
-DEFAULT_DB_PATH = Path("echomemory.db")
+DEFAULT_DB_PATH = Path("relaycore.db")
 PRAGMA_STATEMENTS = (
     "PRAGMA journal_mode=WAL;",
     "PRAGMA synchronous=NORMAL;",
@@ -59,7 +59,7 @@ class ValidationError(StorageError):
 
 def resolve_database_path(db_path: Optional[PathLike] = None) -> Path:
     """Resolve the configured database path without creating files eagerly."""
-    configured = db_path or os.environ.get("ECHOMEMORY_DB") or DEFAULT_DB_PATH
+    configured = db_path or os.environ.get("RELAYCORE_DB") or DEFAULT_DB_PATH
     return Path(configured).expanduser().resolve()
 
 
@@ -266,8 +266,8 @@ def row_to_audit_log(row: sqlite3.Row) -> AuditLogRecord:
     )
 
 
-class EchoMemoryStorage:
-    """Repository layer for core EchoMemory persistence operations."""
+class RelayCoreStorage:
+    """Repository layer for core RelayCore persistence operations."""
 
     def __init__(
         self,
@@ -287,7 +287,7 @@ class EchoMemoryStorage:
         if self._owns_connection:
             self.connection.close()
 
-    def __enter__(self) -> "EchoMemoryStorage":
+    def __enter__(self) -> "RelayCoreStorage":
         return self
 
     def __exit__(self, exc_type: Any, exc: Any, tb: Any) -> None:
@@ -1090,7 +1090,7 @@ __all__ = [
     "COMMAND_STATUSES",
     "COMMAND_STATUS_TRANSITIONS",
     "DEFAULT_DB_PATH",
-    "EchoMemoryStorage",
+    "RelayCoreStorage",
     "InvalidTransitionError",
     "MEMORY_CANDIDATE_STATUSES",
     "NotFoundError",

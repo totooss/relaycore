@@ -1,4 +1,4 @@
-"""Token budget and redaction helpers for EchoMemory."""
+"""Token budget and redaction helpers for RelayCore."""
 
 import json
 import re

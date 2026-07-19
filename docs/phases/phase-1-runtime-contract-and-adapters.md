@@ -2,14 +2,14 @@
 
 ## Goal
 
-Add the short runtime contract and adapter-facing configuration examples so Codex and Claude can attach to the same EchoMemory workflow with minimal context overhead.
+Add the short runtime contract and adapter-facing configuration examples so Codex and Claude can attach to the same RelayCore workflow with minimal context overhead.
 
 ## Input Files
 
 - `AGENTS.md`
 - `CLAUDE.md`
 - `docs/CODEX_EXECUTION_GUIDE_NO_OBSIDIAN.md`
-- `docs/ECHOMEMORY_CROSS_AGENT_BUILD_NO_OBSIDIAN.md`
+- `docs/RELAYCORE_CROSS_AGENT_BUILD_NO_OBSIDIAN.md`
 
 ## Expected Modified Files
 
@@ -36,7 +36,7 @@ Only extract adapter patterns. Do not copy implementations or read unrelated fol
 3. Add Codex hook examples only if the referenced hook commands exist or are clearly marked as examples.
 4. Add Claude-facing setup notes that mirror the same contract.
 5. Keep adapter behavior symmetric across Codex and Claude.
-6. Document how to proceed when EchoMemory MCP is not yet available.
+6. Document how to proceed when RelayCore MCP is not yet available.
 
 ## Disallowed
 

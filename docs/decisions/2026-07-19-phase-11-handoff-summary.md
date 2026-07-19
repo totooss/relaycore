@@ -18,9 +18,9 @@ Validate the MVP across storage, commands, events, MCP tools, UI, security, and 
 
 ## Files Modified
 
-- `echomemory/server.py`
-- `echomemory/mcp_server.py`
-- `echomemory/web_ui.py`
+- `relaycore/server.py`
+- `relaycore/mcp_server.py`
+- `relaycore/web_ui.py`
 - `tests/test_security.py`
 - `tests/test_web_ui.py`
 - `tests/test_event_log.py`
@@ -35,7 +35,7 @@ Validate the MVP across storage, commands, events, MCP tools, UI, security, and 
 
 ## Known Risks
 
-- EchoMemory MCP was not available as a live backend in this task, so durable task commit could not be written there.
+- RelayCore MCP was not available as a live backend in this task, so durable task commit could not be written there.
 
 ## Test Status
 

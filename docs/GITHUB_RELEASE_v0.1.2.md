@@ -1,14 +1,13 @@
-# RelayCore v0.1.1
+# RelayCore v0.1.2
 
-这是 RelayCore 的首个中文化公开发布版本。
+这是 RelayCore 完成内部实现全量统一命名后的发布版本。
 
 ## 本次更新
 
-- 新增中文主 README
-- 新增公开对比表与构建导图
-- 明确标注项目借鉴来源：`EastSword/EchoMemory`
-- 统一对外品牌名称为 `RelayCore`
-- 补充中文说明、对比表与构建导图
+- 内部 Python 包名统一为 `relaycore`
+- 代码、测试、脚本、环境变量、HTTP 头与指标前缀全部统一为 `RelayCore`
+- 清理旧的兼容层表述，公开文档与仓库结构完全对齐
+- 保留对灵感来源 `EastSword/EchoMemory` 的明确致谢
 
 ## 当前能力
 
@@ -25,9 +24,6 @@
 - `relaycore init-db`
 - `relaycore serve`
 - `relaycore export`
-
-也可以直接使用模块入口：
-
 - `python -m relaycore init-db`
 - `python -m relaycore serve`
 - `python -m relaycore export`

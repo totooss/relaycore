@@ -5,13 +5,13 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from echomemory.memory_quality import MemoryQualityService, summarize_content
-from echomemory.storage import EchoMemoryStorage
+from relaycore.memory_quality import MemoryQualityService, summarize_content
+from relaycore.storage import RelayCoreStorage
 
 
 @pytest.fixture
-def storage(tmp_path: Path) -> EchoMemoryStorage:
-    repository = EchoMemoryStorage(tmp_path / "memory-quality.db")
+def storage(tmp_path: Path) -> RelayCoreStorage:
+    repository = RelayCoreStorage(tmp_path / "memory-quality.db")
     try:
         yield repository
     finally:
@@ -19,11 +19,11 @@ def storage(tmp_path: Path) -> EchoMemoryStorage:
 
 
 @pytest.fixture
-def quality(storage: EchoMemoryStorage) -> MemoryQualityService:
+def quality(storage: RelayCoreStorage) -> MemoryQualityService:
     return MemoryQualityService(storage)
 
 
-def create_active_decision(storage: EchoMemoryStorage) -> None:
+def create_active_decision(storage: RelayCoreStorage) -> None:
     storage.create_memory_candidate(
         candidate_id="mem-active",
         proposed_by="codex",
@@ -38,12 +38,12 @@ def create_active_decision(storage: EchoMemoryStorage) -> None:
     )
 
 
-def test_memory_propose_creates_normalized_candidate_and_cluster(quality: MemoryQualityService, storage: EchoMemoryStorage) -> None:
+def test_memory_propose_creates_normalized_candidate_and_cluster(quality: MemoryQualityService, storage: RelayCoreStorage) -> None:
     result = quality.memory_propose(
         proposed_by="codex",
         type=" Decision ",
         title="  Runtime   Contract  ",
-        content="EchoMemory should stay the only durable memory backend for this project.   " * 3,
+        content="RelayCore should stay the only durable memory backend for this project.   " * 3,
         runtime=" CodeX ",
         tags=["Runtime", "runtime", " memory "],
         metadata={" owner ": "codex"},
@@ -60,7 +60,7 @@ def test_memory_propose_creates_normalized_candidate_and_cluster(quality: Memory
     assert cluster.metadata["action"] == "create_new"
 
 
-def test_exact_duplicate_is_merged_deterministically(quality: MemoryQualityService, storage: EchoMemoryStorage) -> None:
+def test_exact_duplicate_is_merged_deterministically(quality: MemoryQualityService, storage: RelayCoreStorage) -> None:
     first = quality.memory_propose(
         proposed_by="codex",
         type="decision",

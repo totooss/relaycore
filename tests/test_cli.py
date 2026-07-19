@@ -3,7 +3,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from echomemory.cli import command_export, command_init_db
+from relaycore.cli import command_export, command_init_db
 
 
 def test_command_init_db_creates_database(tmp_path: Path, capsys) -> None:

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.2 - 2026-07-19
+
+### Changed
+
+- unified the internal Python package name to `relaycore`
+- renamed runtime code, tests, scripts, env vars, metrics, and headers to `RelayCore`
+- removed obsolete compatibility wording from public docs
+
+### Notes
+
+- inspiration attribution remains `EastSword/EchoMemory`
+
 ## 0.1.1 - 2026-07-19
 
 ### Added
@@ -12,7 +24,7 @@
 ### Notes
 
 - Public project name: `RelayCore`
-- Internal Python package name remains `echomemory` for compatibility
+- Internal Python package name: `relaycore`
 
 ## 0.1.0 - 2026-07-19
 
@@ -29,4 +41,4 @@
 ### Notes
 
 - Public project name: RelayCore
-- Internal Python package name remains `echomemory` for compatibility
+- Internal Python package name: `relaycore`

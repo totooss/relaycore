@@ -1,4 +1,4 @@
-"""Lightweight MCP-style tool registry for EchoMemory."""
+"""Lightweight MCP-style tool registry for RelayCore."""
 
 from dataclasses import asdict, dataclass
 from typing import Any, Callable, Dict, List, Optional
@@ -8,7 +8,7 @@ from .command_bus import CommandBusService, serialize_command
 from .event_log import EventLogService, serialize_digest, serialize_event
 from .memory_quality import MemoryQualityService, combined_similarity, summarize_content
 from .runtime_adapters import RuntimeAdapterRegistry
-from .storage import EchoMemoryStorage, utc_now
+from .storage import RelayCoreStorage, utc_now
 from .token_budget import estimate_tokens, redact_structure
 
 
@@ -29,19 +29,19 @@ class MCPToolError(Exception):
     """Raised when an MCP-style tool invocation fails validation."""
 
 
-class EchoMemoryMCPServer:
-    """Expose EchoMemory capabilities through a compact MCP-style tool registry."""
+class RelayCoreMCPServer:
+    """Expose RelayCore capabilities through a compact MCP-style tool registry."""
 
     def __init__(
         self,
-        storage: Optional[EchoMemoryStorage] = None,
+        storage: Optional[RelayCoreStorage] = None,
         *,
         command_bus: Optional[CommandBusService] = None,
         event_log: Optional[EventLogService] = None,
         memory_quality: Optional[MemoryQualityService] = None,
         adapters: Optional[RuntimeAdapterRegistry] = None,
     ) -> None:
-        self.storage = storage or EchoMemoryStorage()
+        self.storage = storage or RelayCoreStorage()
         self.event_log = event_log or EventLogService(self.storage)
         self.command_bus = command_bus or CommandBusService(self.storage, event_log=self.event_log)
         if self.command_bus.event_log is None:
@@ -164,7 +164,7 @@ class EchoMemoryMCPServer:
             session = self.storage.create_session(
                 session_id=session_id,
                 name=name or "Session {}".format(session_id),
-                goal=goal or "Active EchoMemory task",
+                goal=goal or "Active RelayCore task",
                 mode=context.mode,
                 created_by=context.agent_id,
                 metadata={"last_runtime": context.runtime, **context.metadata},

@@ -5,19 +5,19 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from echomemory.mcp_server import EchoMemoryMCPServer
-from echomemory.storage import EchoMemoryStorage
+from relaycore.mcp_server import RelayCoreMCPServer
+from relaycore.storage import RelayCoreStorage
 
 
 @pytest.fixture
-def server(tmp_path: Path) -> EchoMemoryMCPServer:
-    storage = EchoMemoryStorage(tmp_path / "mcp-tools.db")
-    instance = EchoMemoryMCPServer(storage=storage)
+def server(tmp_path: Path) -> RelayCoreMCPServer:
+    storage = RelayCoreStorage(tmp_path / "mcp-tools.db")
+    instance = RelayCoreMCPServer(storage=storage)
     yield instance
     storage.close()
 
 
-def test_tool_list_contains_required_mcp_surface(server: EchoMemoryMCPServer) -> None:
+def test_tool_list_contains_required_mcp_surface(server: RelayCoreMCPServer) -> None:
     names = [tool.name for tool in server.list_tools()]
     assert "memory_begin_task" in names
     assert "memory_context" in names
@@ -28,7 +28,7 @@ def test_tool_list_contains_required_mcp_surface(server: EchoMemoryMCPServer) ->
     assert "agent_heartbeat" in names
 
 
-def test_memory_begin_context_and_commit_flow(server: EchoMemoryMCPServer) -> None:
+def test_memory_begin_context_and_commit_flow(server: RelayCoreMCPServer) -> None:
     begun = server.call_tool(
         "memory_begin_task",
         {
@@ -82,7 +82,7 @@ def test_memory_begin_context_and_commit_flow(server: EchoMemoryMCPServer) -> No
     assert committed["session_id"] == "session-1"
 
 
-def test_memory_propose_preserves_conflicts_and_rejected_options(server: EchoMemoryMCPServer) -> None:
+def test_memory_propose_preserves_conflicts_and_rejected_options(server: RelayCoreMCPServer) -> None:
     server.call_tool(
         "memory_begin_task",
         {"session_id": "session-2", "runtime": "codex", "agent_id": "codex-runner"},
@@ -124,7 +124,7 @@ def test_memory_propose_preserves_conflicts_and_rejected_options(server: EchoMem
     assert context["items"][0]["rejected_summary"]
 
 
-def test_codex_and_claude_share_one_session_workflow(server: EchoMemoryMCPServer) -> None:
+def test_codex_and_claude_share_one_session_workflow(server: RelayCoreMCPServer) -> None:
     server.call_tool(
         "memory_begin_task",
         {
@@ -151,7 +151,7 @@ def test_codex_and_claude_share_one_session_workflow(server: EchoMemoryMCPServer
             "agent_id": "codex-runner",
             "type": "decision",
             "title": "Shared Store",
-            "content": "Use SQLite as the shared EchoMemory store.",
+            "content": "Use SQLite as the shared RelayCore store.",
             "tags": ["storage"],
         },
     )
@@ -202,7 +202,7 @@ def test_codex_and_claude_share_one_session_workflow(server: EchoMemoryMCPServer
     assert server.storage.get_session("shared-session").metadata["last_commit_runtime"] == "claude"
 
 
-def test_command_tools_and_digest_fetch_work_together(server: EchoMemoryMCPServer) -> None:
+def test_command_tools_and_digest_fetch_work_together(server: RelayCoreMCPServer) -> None:
     server.call_tool(
         "memory_begin_task",
         {"session_id": "session-3", "runtime": "codex", "agent_id": "codex-runner"},
@@ -270,7 +270,7 @@ def test_command_tools_and_digest_fetch_work_together(server: EchoMemoryMCPServe
     assert digests["digests"]
 
 
-def test_agent_heartbeat_updates_shared_agent_state(server: EchoMemoryMCPServer) -> None:
+def test_agent_heartbeat_updates_shared_agent_state(server: RelayCoreMCPServer) -> None:
     heartbeat = server.call_tool(
         "agent_heartbeat",
         {

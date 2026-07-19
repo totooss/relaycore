@@ -8,7 +8,7 @@ from urllib.parse import quote
 from .command_bus import CommandBusService
 from .event_log import EventLogService
 from .runtime_adapters import CollaborationModeRegistry
-from .storage import EchoMemoryStorage
+from .storage import RelayCoreStorage
 from .token_budget import redact_structure
 
 
@@ -25,7 +25,7 @@ class MissionControlUI:
 
     def __init__(
         self,
-        storage: EchoMemoryStorage,
+        storage: RelayCoreStorage,
         command_bus: CommandBusService,
         event_log: EventLogService,
     ) -> None:

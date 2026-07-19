@@ -8,15 +8,15 @@ Add baseline security controls and operational visibility so the system can be e
 
 - `AGENTS.md`
 - `docs/phases/phase-10-security-and-observability.md`
-- `echomemory/server.py`
-- `echomemory/mcp_server.py`
-- `echomemory/storage.py`
+- `relaycore/server.py`
+- `relaycore/mcp_server.py`
+- `relaycore/storage.py`
 
 ## Expected Modified Files
 
-- `echomemory/server.py`
-- `echomemory/mcp_server.py`
-- `echomemory/token_budget.py`
+- `relaycore/server.py`
+- `relaycore/mcp_server.py`
+- `relaycore/token_budget.py`
 - `tests/test_security.py`
 
 ## External Reference Scope

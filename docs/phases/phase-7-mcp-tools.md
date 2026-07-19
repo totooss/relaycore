@@ -2,21 +2,21 @@
 
 ## Goal
 
-Expose the core EchoMemory behavior through MCP tools so Codex, Claude, and other compatible agents can share one long-term memory and command workflow.
+Expose the core RelayCore behavior through MCP tools so Codex, Claude, and other compatible agents can share one long-term memory and command workflow.
 
 ## Input Files
 
 - `AGENTS.md`
 - `docs/phases/phase-7-mcp-tools.md`
-- `echomemory/mcp_server.py`
-- `echomemory/server.py`
-- `echomemory/storage.py`
-- `echomemory/memory_quality.py`
+- `relaycore/mcp_server.py`
+- `relaycore/server.py`
+- `relaycore/storage.py`
+- `relaycore/memory_quality.py`
 
 ## Expected Modified Files
 
-- `echomemory/mcp_server.py`
-- `echomemory/runtime_adapters.py`
+- `relaycore/mcp_server.py`
+- `relaycore/runtime_adapters.py`
 - `tests/test_mcp_tools.py`
 
 ## External Reference Scope

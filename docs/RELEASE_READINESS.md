@@ -44,7 +44,7 @@ Reason:
 - short,
 - clearer for command-and-memory relay behavior,
 - better suited for a broader control-plane identity,
-- distinct from the earlier working title `EchoMemory`.
+- distinct from the earlier working title `RelayCore`.
 
 ## Release Recommendation
 

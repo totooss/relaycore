@@ -6,14 +6,14 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from echomemory.server import create_app
-from echomemory.storage import EchoMemoryStorage
-from echomemory.token_budget import TOKEN_REDACTION
+from relaycore.server import create_app
+from relaycore.storage import RelayCoreStorage
+from relaycore.token_budget import TOKEN_REDACTION
 
 
 @pytest.fixture
 def secured_client(tmp_path: Path):
-    storage = EchoMemoryStorage(tmp_path / "security.db")
+    storage = RelayCoreStorage(tmp_path / "security.db")
     storage.create_session(
         session_id="session-1",
         name="Security Session",
@@ -58,9 +58,9 @@ def test_protected_routes_require_access_token_and_allow_authorized_access(secur
 
     metrics = client.get("/metrics", headers={"Authorization": "Bearer top-secret"})
     assert metrics.status_code == 200
-    assert "echomemory_sessions_total 1" in metrics.data.decode("utf-8")
+    assert "relaycore_sessions_total 1" in metrics.data.decode("utf-8")
 
-    exported = client.get("/api/export", headers={"X-EchoMemory-Access-Token": "top-secret"})
+    exported = client.get("/api/export", headers={"X-RelayCore-Access-Token": "top-secret"})
     assert exported.status_code == 200
     command_dump = json.dumps(exported.get_json()["tables"]["commands"], sort_keys=True)
     assert TOKEN_REDACTION in command_dump
@@ -69,7 +69,7 @@ def test_protected_routes_require_access_token_and_allow_authorized_access(secur
     backup_target = tmp_path / "snapshots" / "copy.db"
     backed_up = client.post(
         "/api/backup",
-        headers={"X-EchoMemory-Access-Token": "top-secret"},
+        headers={"X-RelayCore-Access-Token": "top-secret"},
         json={"target_path": str(backup_target)},
     )
     assert backed_up.status_code == 201
@@ -123,8 +123,8 @@ def test_cors_preflight_allows_same_origin_and_explicit_allowlist(secured_client
 
 
 def test_create_app_respects_explicit_empty_cors_allowlist(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("ECHOMEMORY_CORS_ALLOWLIST", "https://env-allowed.example")
-    storage = EchoMemoryStorage(tmp_path / "empty-allowlist.db")
+    monkeypatch.setenv("RELAYCORE_CORS_ALLOWLIST", "https://env-allowed.example")
+    storage = RelayCoreStorage(tmp_path / "empty-allowlist.db")
     storage.create_session(
         session_id="session-1",
         name="Empty Allowlist",

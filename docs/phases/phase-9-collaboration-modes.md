@@ -8,15 +8,15 @@ Define and implement shared collaboration modes so multiple agents can coordinat
 
 - `AGENTS.md`
 - `docs/phases/phase-9-collaboration-modes.md`
-- `echomemory/command_bus.py`
-- `echomemory/runtime_adapters.py`
-- `echomemory/web_ui.py`
+- `relaycore/command_bus.py`
+- `relaycore/runtime_adapters.py`
+- `relaycore/web_ui.py`
 
 ## Expected Modified Files
 
-- `echomemory/command_bus.py`
-- `echomemory/runtime_adapters.py`
-- `echomemory/web_ui.py`
+- `relaycore/command_bus.py`
+- `relaycore/runtime_adapters.py`
+- `relaycore/web_ui.py`
 - `tests/test_collaboration_modes.py`
 
 ## External Reference Scope
