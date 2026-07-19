@@ -1,70 +1,35 @@
 # RelayCore Roadmap
 
-## Completion Snapshot
+## 当前仓库内容
 
-RelayCore has completed the MVP control-plane loop:
+当前仓库包含：
 
-- shared sessions,
-- structured command relay,
-- event timeline and digests,
-- MCP-style memory tools,
-- Mission Control UI,
-- baseline security controls,
-- safe local memory migration.
+- 共享 sessions
+- 结构化 command relay
+- event timeline 与 digests
+- MCP-style memory tools
+- Mission Control UI
+- token、CORS、audit、redaction、export、backup 相关代码路径
+- 本地 memory 迁移能力
 
-## Next Priority
+## TODO
 
-### 1. Release Hardening
+- 增加启动配置与环境变量说明
+- 增加 CLI 级集成测试
+- 增加 Docker 打包
+- 增加反向代理部署示例
+- 增加 metrics 的延迟与错误统计
+- 增加结构化日志
+- 增加导入 / 导出审计摘要
+- 在 Mission Control 中加入导入预览与确认流程
+- 增加更多 Claude / Codex source adapters
+- 增加导入去重预览与回滚快照说明
+- 增加 runtime capability discovery
+- 增加 agent pool 路由过滤能力
+- 增加阶段间 artifact handoff metadata
+- 增加多用户场景的认证与限流能力
+- 增加备份恢复演练与恢复文档
 
-- Add semantic versioning and release tags.
-- Add a lightweight changelog discipline.
-- Add startup smoke checks for required environment variables.
-- Add CLI-level integration tests.
+## Issue Feedback
 
-### 2. Deployment Ergonomics
-
-- Add a small config reference for host, port, token, CORS, and backup paths.
-- Add Docker packaging for local and server deployment.
-- Add a reverse-proxy deployment example.
-
-### 3. Observability Depth
-
-- Expand metrics beyond counts into latency and error buckets.
-- Add structured logs for operators.
-- Add import/export audit summaries.
-
-### 4. Migration Maturity
-
-- Add per-entry preview and approval flow in Mission Control.
-- Add richer source adapters for more Claude/Codex layouts.
-- Add import dedupe preview and rollback snapshots.
-
-### 5. Multi-Runtime Interop
-
-- Add stronger runtime capability discovery.
-- Add richer routing filters for agent pools.
-- Add artifact handoff metadata between stages.
-
-### 6. Production Safety
-
-- Add stronger auth options for multi-user deployments.
-- Add rate-limiting or request throttling.
-- Add backup restore drills and recovery docs.
-
-## Suggested Release Sequence
-
-### v0.1.0
-
-- Public GitHub release of the current MVP.
-
-### v0.2.0
-
-- Deployment packaging, Docker, and richer config docs.
-
-### v0.3.0
-
-- Migration preview UI and operator approval workflow.
-
-### v0.4.0
-
-- Production-grade observability and deployment hardening.
+欢迎通过 GitHub issue 提出建议。适合纳入产品规划的建议会进入后续 roadmap。
