@@ -1,11 +1,11 @@
 # AGENTS.md
 
-## EchoMemory Runtime Rules
+## RelayCore Runtime Rules
 
-EchoMemory is the only long-term memory backend for this project.
+RelayCore is the only long-term memory backend for this project.
 
 Before work:
-1. Call `memory_begin_task` if EchoMemory MCP is available.
+1. Call `memory_begin_task` if RelayCore MCP is available.
 2. Call `memory_context` with `max_tokens <= 1200`.
 3. Read active decisions, rules, lessons, and relevant rejected options.
 
@@ -20,7 +20,7 @@ During work:
 Before stop:
 1. Call `memory_commit_task` if available.
 2. Save durable decisions and rejected options.
-3. If EchoMemory is unavailable, explicitly report it and store durable decisions under `docs/decisions/`.
+3. If RelayCore is unavailable, explicitly report it and store durable decisions under `docs/decisions/`.
 
 Implementation rules:
 - Do not read the full build blueprint unless explicitly asked.

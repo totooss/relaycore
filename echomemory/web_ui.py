@@ -1,4 +1,4 @@
-"""HTML Mission Control views for EchoMemory."""
+"""HTML Mission Control views for RelayCore."""
 
 from html import escape
 import json
@@ -60,7 +60,7 @@ class MissionControlUI:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>EchoMemory Mission Control</title>
+  <title>RelayCore Mission Control</title>
   <style>
     :root {{
       --sand: #f5efe1;
@@ -397,7 +397,7 @@ class MissionControlUI:
 <body>
   <div class="shell">
     <section class="hero">
-      <span class="eyebrow">EchoMemory Mission Control</span>
+      <span class="eyebrow">RelayCore Mission Control</span>
       <h1>Shared runtime memory, not a shell.</h1>
       <p>Inspect sessions, structured commands, live events, candidate memories, and audit trails from one page. This console only publishes permission-scoped commands and session metadata. It never executes arbitrary shell instructions.</p>
       <div class="metrics">

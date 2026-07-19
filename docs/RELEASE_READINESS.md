@@ -42,14 +42,14 @@ RelayCore
 Reason:
 
 - short,
-- easier to remember than EchoMemory,
-- better aligned with cross-runtime command and memory relay behavior,
-- broad enough to grow beyond one memory subsystem.
+- clearer for command-and-memory relay behavior,
+- better suited for a broader control-plane identity,
+- distinct from the earlier working title `EchoMemory`.
 
 ## Release Recommendation
 
 Publish now as:
 
-- `v0.1.0`
+- `v0.1.1`
 - GitHub-first MVP release
 - clearly described as a local/self-hosted beta

@@ -55,7 +55,7 @@ def test_mission_control_dashboard_renders_sections(tmp_path: Path) -> None:
 
         assert response.status_code == 200
         assert response.mimetype == "text/html"
-        assert "EchoMemory Mission Control" in body
+        assert "RelayCore Mission Control" in body
         assert "Command Publisher" in body
         assert "Collaboration Modes" in body
         assert "Quick Publish adversarial" in body
