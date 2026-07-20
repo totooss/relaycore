@@ -116,11 +116,23 @@ class RelayCoreAPI:
                 Rule("/api/events", methods=["POST"], endpoint="append_event"),
                 Rule("/api/events", methods=["GET"], endpoint="list_events"),
                 Rule("/api/events/stream", methods=["GET"], endpoint="stream_events"),
+                Rule("/api/digests/<digest_id>/trace", methods=["GET"], endpoint="digest_trace"),
                 Rule(
                     "/api/memory-candidates/<candidate_id>/resolve",
                     methods=["POST"],
                     endpoint="resolve_memory_candidate",
                 ),
+                Rule(
+                    "/api/memory-candidates/<candidate_id>/promote",
+                    methods=["POST"],
+                    endpoint="promote_memory_candidate",
+                ),
+                Rule(
+                    "/api/memory-candidates/<candidate_id>/evidence",
+                    methods=["GET"],
+                    endpoint="memory_candidate_evidence",
+                ),
+                Rule("/api/rejected-knowledge", methods=["GET"], endpoint="list_rejected_knowledge"),
                 Rule("/api/export", methods=["GET"], endpoint="export_snapshot"),
                 Rule("/api/backup", methods=["POST"], endpoint="backup_database"),
                 Rule("/metrics", methods=["GET"], endpoint="metrics"),
@@ -291,6 +303,18 @@ class RelayCoreAPI:
         )
         return self._json_response({"candidate": asdict(candidate)}, 200)
 
+    def _promote_memory_candidate(self, request: Request, candidate_id: str) -> Response:
+        payload = self._json_body(request)
+        candidate = self.memory_quality.promote_candidate(
+            candidate_id,
+            target_level=payload.get("target_level", "L3"),
+            actor=payload.get("actor", "api"),
+            runtime=payload.get("runtime"),
+            mode=payload.get("mode"),
+            metadata=payload.get("metadata"),
+        )
+        return self._json_response({"candidate": asdict(candidate)}, 200)
+
     def _list_events(self, request: Request) -> Response:
         session_id = request.args.get("session_id")
         if not session_id:
@@ -307,6 +331,39 @@ class RelayCoreAPI:
             },
             200,
         )
+
+    def _digest_trace(self, request: Request, digest_id: str) -> Response:
+        digest = self.storage.get_session_digest(digest_id)
+        bundle = self.event_log.build_trace_bundle(
+            trace_refs=digest.trace_refs,
+            artifact_refs=digest.artifact_refs,
+        )
+        return self._json_response({"digest": serialize_digest(digest), "trace": bundle}, 200)
+
+    def _memory_candidate_evidence(self, request: Request, candidate_id: str) -> Response:
+        candidate = self.storage.get_memory_candidate(candidate_id)
+        bundle = self.event_log.build_trace_bundle(
+            trace_refs=candidate.trace_refs,
+            artifact_refs=candidate.artifact_refs,
+        )
+        rejected = self.storage.list_rejected_knowledge(candidate_id=candidate_id, limit=20)
+        return self._json_response(
+            {
+                "candidate": asdict(candidate),
+                "trace": bundle,
+                "rejected_knowledge": [asdict(item) for item in rejected],
+            },
+            200,
+        )
+
+    def _list_rejected_knowledge(self, request: Request) -> Response:
+        records = self.storage.list_rejected_knowledge(
+            session_id=request.args.get("session_id"),
+            candidate_id=request.args.get("candidate_id"),
+            accepted_candidate_id=request.args.get("accepted_candidate_id"),
+            limit=int(request.args.get("limit", 50)),
+        )
+        return self._json_response({"items": [asdict(item) for item in records]}, 200)
 
     def _stream_events(self, request: Request) -> Response:
         session_id = request.args.get("session_id")
@@ -407,6 +464,7 @@ class RelayCoreAPI:
             "relaycore_candidates_total {}".format(self._count_rows("memory_candidates")),
             "relaycore_agent_states_total {}".format(self._count_rows("agent_states")),
             "relaycore_audit_logs_total {}".format(self._count_rows("audit_logs")),
+            "relaycore_rejected_knowledge_total {}".format(self._count_rows("rejected_knowledge")),
         ]
         for status in ("pending", "claimed", "completed", "failed"):
             lines.append(
@@ -427,12 +485,14 @@ class RelayCoreAPI:
             events = self.event_log.list_events(session_id, limit=1000)
             candidates = self.storage.list_memory_candidates(session_id=session_id, limit=1000)
             digests = self.storage.list_session_digests(session_id, limit=1000)
+            rejected = self.storage.list_rejected_knowledge(session_id=session_id, limit=1000)
             lines.extend(
                 [
                     'relaycore_session_commands{{session_id="{}"}} {}'.format(session_id, len(commands)),
                     'relaycore_session_events{{session_id="{}"}} {}'.format(session_id, len(events)),
                     'relaycore_session_candidates{{session_id="{}"}} {}'.format(session_id, len(candidates)),
                     'relaycore_session_digests{{session_id="{}"}} {}'.format(session_id, len(digests)),
+                    'relaycore_session_rejected_knowledge{{session_id="{}"}} {}'.format(session_id, len(rejected)),
                     'relaycore_session_token_estimate{{session_id="{}"}} {}'.format(
                         session_id,
                         estimate_payload_tokens(

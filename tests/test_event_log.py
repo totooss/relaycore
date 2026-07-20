@@ -215,6 +215,27 @@ def test_digest_is_created_every_ten_events(event_log: EventLogService, storage:
     assert len(digests) == 1
     assert digests[0].from_seq == 1
     assert digests[0].to_seq == 10
+    assert digests[0].node_id.startswith("digest-node-session-1")
+    assert digests[0].task_canvas.startswith("graph TD")
+    assert digests[0].trace_refs
+
+
+def test_digest_trace_endpoint_returns_evidence_bundle(client, event_log: EventLogService, storage: RelayCoreStorage) -> None:
+    for index in range(10):
+        event_log.append_event(
+            session_id="session-1",
+            agent_id="codex",
+            event_type="tool_summary",
+            content={"index": index, "open_questions": ["What ships next?"] if index == 9 else []},
+        )
+
+    digest = storage.list_session_digests("session-1")[0]
+    response = client.get("/api/digests/{}/trace".format(digest.digest_id))
+    payload = response.get_json()
+
+    assert response.status_code == 200
+    assert payload["digest"]["task_canvas"].startswith("graph TD")
+    assert payload["trace"]["events"]
 
 
 def test_stream_events_stays_live_for_new_events(event_log: EventLogService) -> None:

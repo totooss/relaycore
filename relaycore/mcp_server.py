@@ -55,6 +55,10 @@ class RelayCoreMCPServer:
             "memory_context": self.memory_context,
             "memory_propose": self.memory_propose,
             "memory_add": self.memory_add,
+            "memory_promote": self.memory_promote,
+            "trace_lookup": self.trace_lookup,
+            "memory_evidence": self.memory_evidence,
+            "rejected_knowledge_lookup": self.rejected_knowledge_lookup,
             "memory_commit_task": self.memory_commit_task,
             "command_poll": self.command_poll,
             "command_claim": self.command_claim,
@@ -86,6 +90,26 @@ class RelayCoreMCPServer:
                 name="memory_add",
                 description="Persist an explicit active memory entry with compact summaries.",
                 input_schema={"type": "object", "required": ["session_id", "runtime", "type", "title", "content"]},
+            ),
+            MCPToolDefinition(
+                name="memory_promote",
+                description="Promote active L1/L2 memory into L3 canonical memory with required evidence traces.",
+                input_schema={"type": "object", "required": ["candidate_id", "runtime", "actor"]},
+            ),
+            MCPToolDefinition(
+                name="trace_lookup",
+                description="Resolve digest, memory, or event trace references back to evidence and artifacts.",
+                input_schema={"type": "object", "required": ["runtime"]},
+            ),
+            MCPToolDefinition(
+                name="memory_evidence",
+                description="Inspect a memory candidate with its trace refs, artifacts, and rejected-knowledge links.",
+                input_schema={"type": "object", "required": ["candidate_id", "runtime"]},
+            ),
+            MCPToolDefinition(
+                name="rejected_knowledge_lookup",
+                description="Explain why a candidate or option was rejected and which decision replaced it.",
+                input_schema={"type": "object", "required": ["runtime"]},
             ),
             MCPToolDefinition(
                 name="memory_commit_task",
@@ -289,6 +313,9 @@ class RelayCoreMCPServer:
             rejected=arguments.get("rejected"),
             metadata=context.metadata,
             relation_hint=arguments.get("relation_hint"),
+            trace_refs=arguments.get("trace_refs"),
+            artifact_refs=arguments.get("artifact_refs"),
+            memory_level=arguments.get("memory_level"),
         )
         return {
             "candidate": redact_structure(asdict(result.candidate)),
@@ -322,6 +349,9 @@ class RelayCoreMCPServer:
             tags=arguments.get("tags"),
             rejected=arguments.get("rejected"),
             metadata=context.metadata,
+            trace_refs=arguments.get("trace_refs"),
+            artifact_refs=arguments.get("artifact_refs"),
+            memory_level=arguments.get("memory_level"),
         )
         candidate = self.storage.create_memory_candidate(
             candidate_id="mem-{}".format(uuid4().hex[:12]),
@@ -338,6 +368,11 @@ class RelayCoreMCPServer:
             similar_to=[],
             conflicts_with=[],
             recommended_action="memory_add",
+            node_id="memory-node-{}".format(uuid4().hex[:8]),
+            trace_refs=normalized.trace_refs,
+            artifact_refs=normalized.artifact_refs,
+            memory_level=normalized.memory_level,
+            decision_status="accepted",
             resolved_at=utc_now(),
         )
         cluster = self.storage.upsert_memory_cluster(
@@ -371,9 +406,12 @@ class RelayCoreMCPServer:
             event_type="memory_added",
             content={
                 "candidate_id": candidate.candidate_id,
+                "node_id": candidate.node_id,
                 "action": "memory_add",
                 "summary": candidate.summary,
             },
+            trace_refs=candidate.trace_refs,
+            artifact_refs=candidate.artifact_refs,
             metadata={"source": "mcp"},
         )
         return {
@@ -382,6 +420,87 @@ class RelayCoreMCPServer:
             "action": "memory_add",
             "summary": candidate.summary,
         }
+
+    def memory_promote(
+        self,
+        *,
+        candidate_id: str,
+        runtime: str,
+        actor: str,
+        mode: Optional[str] = None,
+        target_level: str = "L3",
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        promoted = self.memory_quality.promote_candidate(
+            candidate_id,
+            target_level=target_level,
+            actor=actor,
+            runtime=runtime,
+            mode=mode,
+            metadata=metadata,
+        )
+        return {"candidate": redact_structure(asdict(promoted))}
+
+    def trace_lookup(
+        self,
+        *,
+        runtime: str,
+        digest_id: Optional[str] = None,
+        candidate_id: Optional[str] = None,
+        event_seq: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        self.adapters.normalize(runtime=runtime)
+        trace_refs: List[Any] = []
+        artifact_refs: List[Any] = []
+        subject: Dict[str, Any] = {}
+        if digest_id:
+            digest = self.storage.get_session_digest(digest_id)
+            trace_refs = digest.trace_refs
+            artifact_refs = digest.artifact_refs
+            subject = {"digest": redact_structure(asdict(digest))}
+        elif candidate_id:
+            candidate = self.storage.get_memory_candidate(candidate_id)
+            trace_refs = candidate.trace_refs
+            artifact_refs = candidate.artifact_refs
+            subject = {"candidate": redact_structure(asdict(candidate))}
+        elif event_seq is not None:
+            event = self.storage.get_event(int(event_seq))
+            trace_refs = event.trace_refs
+            artifact_refs = event.artifact_refs
+            subject = {"event": redact_structure(asdict(event))}
+        bundle = self.event_log.build_trace_bundle(trace_refs=trace_refs, artifact_refs=artifact_refs)
+        return {**subject, **redact_structure(bundle)}
+
+    def memory_evidence(self, *, candidate_id: str, runtime: str) -> Dict[str, Any]:
+        self.adapters.normalize(runtime=runtime)
+        candidate = self.storage.get_memory_candidate(candidate_id)
+        bundle = self.event_log.build_trace_bundle(
+            trace_refs=candidate.trace_refs,
+            artifact_refs=candidate.artifact_refs,
+        )
+        rejected = self.storage.list_rejected_knowledge(candidate_id=candidate_id, limit=20)
+        return {
+            "candidate": redact_structure(asdict(candidate)),
+            "trace": redact_structure(bundle),
+            "rejected_knowledge": redact_structure([asdict(item) for item in rejected]),
+        }
+
+    def rejected_knowledge_lookup(
+        self,
+        *,
+        runtime: str,
+        candidate_id: Optional[str] = None,
+        accepted_candidate_id: Optional[str] = None,
+        session_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        self.adapters.normalize(runtime=runtime)
+        records = self.storage.list_rejected_knowledge(
+            candidate_id=candidate_id,
+            accepted_candidate_id=accepted_candidate_id,
+            session_id=session_id,
+            limit=50,
+        )
+        return {"items": redact_structure([asdict(record) for record in records])}
 
     def memory_commit_task(
         self,
@@ -410,6 +529,10 @@ class RelayCoreMCPServer:
                 decisions=decisions or [],
                 open_questions=open_questions or [],
                 rejected_candidates=rejected_candidates or [],
+                node_id="digest-node-{}-{}".format(session_id, events[-1].seq),
+                trace_refs=[trace for event in events for trace in event.trace_refs],
+                artifact_refs=[ref for event in events for ref in event.artifact_refs],
+                task_canvas=self.event_log._build_task_canvas(events),
             )
         self.storage.update_session(
             session_id,

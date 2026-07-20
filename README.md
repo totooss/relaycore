@@ -1,21 +1,27 @@
 # RelayCore
 
-> 面向本地或自托管 AI runtime 的共享记忆与结构化命令中继控制面。
+> 面向本地或自托管 AI runtime 的共享记忆、证据追溯与结构化决策控制面。
 
 `中文为主` | `English summary below`
 
 ## 项目简介
 
-RelayCore 提供一套轻量、可自托管的控制平面，让多个 AI runtime 共享长期记忆、事件时间线和结构化命令流，而不是依赖一次性聊天上下文传话。
+RelayCore 提供一套轻量、可自托管的控制平面，让多个 AI runtime 共享长期记忆、事件时间线、结构化命令流和可追溯决策证据，而不是依赖一次性聊天上下文传话。
+
+当前项目的核心演进方向是：
+
+- `Shared State`：共享 Memory、Command、Event、Mission Control
+- `Shared Intelligence`：在共享状态之上增加 trace recovery、task canvas、canonical memory、rejected knowledge 和 decision governance
 
 当前仓库公开包含：
 
 - SQLite 共享存储
 - 结构化 command bus
 - append-only event timeline 与 digest
+- traceable digest、Mermaid task canvas 与 evidence trace refs
 - MCP-style memory / command tools
 - Mission Control Web UI
-- 记忆浏览与冲突处理界面
+- 记忆浏览、Trace Inspector、Rejected Knowledge 与冲突处理界面
 - export、backup、audit、metrics、CORS、token 相关接口
 - 本地历史记忆迁移脚本
 
@@ -23,7 +29,9 @@ RelayCore 提供一套轻量、可自托管的控制平面，让多个 AI runtim
 
 - 用统一存储层承载跨 runtime 的长期记忆
 - 用结构化命令总线分发任务、声明权限和记录状态
-- 用事件时间线和 digest 追踪执行过程
+- 用事件时间线、digest 和 Mermaid task canvas 追踪执行过程
+- 用 `trace_refs` / `artifact_refs` 把摘要、决策和记忆反查回原始证据
+- 用 memory levels、rejected knowledge 和 decision ledger 沉淀组织知识
 - 用 REST API、CLI、MCP HTTP bridge 与 Web UI 提供多种接入方式
 - 用本地迁移脚本把历史记忆导入 RelayCore
 

@@ -135,3 +135,63 @@ def test_summary_helper_stays_compact() -> None:
     summary = summarize_content(content)
     assert len(summary) == 160
     assert summary.endswith("...")
+
+
+def test_l3_promotion_requires_trace_and_active_memory(quality: MemoryQualityService, storage: RelayCoreStorage) -> None:
+    candidate = storage.create_memory_candidate(
+        candidate_id="mem-promote-1",
+        proposed_by="codex",
+        runtime="codex",
+        session_id="session-1",
+        type="decision",
+        title="Promotable Decision",
+        content="Promote with evidence.",
+        status="active",
+        memory_level="L1",
+        trace_refs=[{"session_id": "session-1", "event_seq": 7, "source_location": "tests"}],
+    )
+
+    promoted = quality.promote_candidate(
+        candidate.candidate_id,
+        target_level="L3",
+        actor="codex",
+    )
+
+    assert promoted.memory_level == "L3"
+    assert promoted.decision_status == "accepted"
+
+
+def test_resolving_superseded_candidate_records_rejected_knowledge(quality: MemoryQualityService, storage: RelayCoreStorage) -> None:
+    storage.create_memory_candidate(
+        candidate_id="mem-active",
+        proposed_by="codex",
+        runtime="codex",
+        session_id="session-1",
+        type="decision",
+        title="Primary Database",
+        content="Use SQLite for the MVP control plane.",
+        summary="Use SQLite for the MVP control plane.",
+        tags=["storage"],
+        status="active",
+    )
+    result = quality.memory_propose(
+        proposed_by="claude",
+        type="decision",
+        title="Primary Database",
+        content="Use PostgreSQL for the MVP control plane.",
+        relation_hint="supersede",
+        trace_refs=[{"session_id": "session-1", "event_seq": 9, "source_location": "tests"}],
+        tags=["storage"],
+    )
+
+    quality.resolve_candidate(
+        result.candidate.candidate_id,
+        status="superseded",
+        actor="mission-control",
+        metadata={"reason": "SQLite remains the accepted option."},
+    )
+
+    rejected = storage.list_rejected_knowledge(candidate_id=result.candidate.candidate_id)
+    assert rejected
+    assert rejected[0].accepted_candidate_id == "mem-active"
+    assert rejected[0].reason == "SQLite remains the accepted option."

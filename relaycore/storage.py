@@ -10,11 +10,13 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 from .models import (
     AgentEventRecord,
     AgentStateRecord,
+    ArtifactRecord,
     AuditLogRecord,
     CommandRecord,
     MemoryCandidateRecord,
     MemoryClusterRecord,
     MemoryOccurrenceRecord,
+    RejectedKnowledgeRecord,
     SessionDigestRecord,
     SessionRecord,
 )
@@ -39,6 +41,8 @@ COMMAND_STATUS_TRANSITIONS = {
 MEMORY_CANDIDATE_STATUSES = frozenset(
     ("pending", "active", "merged", "corrected", "superseded", "archived", "rejected")
 )
+MEMORY_LEVELS = frozenset(("L0", "L1", "L2", "L3"))
+DECISION_STATUSES = frozenset(("candidate", "accepted", "superseded", "rejected", "archived"))
 
 
 class StorageError(Exception):
@@ -68,7 +72,8 @@ def connect_database(db_path: Optional[PathLike] = None) -> sqlite3.Connection:
     resolved_path = resolve_database_path(db_path)
     resolved_path.parent.mkdir(parents=True, exist_ok=True)
 
-    connection = sqlite3.connect(str(resolved_path))
+    # The local Mission Control server can serve SSE and page requests concurrently.
+    connection = sqlite3.connect(str(resolved_path), check_same_thread=False)
     return configure_connection(connection)
 
 
@@ -124,6 +129,24 @@ def ensure_json_list(name: str, value: Optional[List[Any]]) -> List[Any]:
     return value
 
 
+def ensure_choice(name: str, value: str, allowed: Sequence[str]) -> str:
+    if value not in allowed:
+        raise ValidationError("{} must be one of {}".format(name, ", ".join(allowed)))
+    return value
+
+
+def memory_status_to_decision_status(status: str) -> str:
+    return {
+        "pending": "candidate",
+        "merged": "accepted",
+        "corrected": "accepted",
+        "active": "accepted",
+        "superseded": "superseded",
+        "archived": "archived",
+        "rejected": "rejected",
+    }.get(status, "candidate")
+
+
 def row_to_session(row: sqlite3.Row) -> SessionRecord:
     return SessionRecord(
         session_id=row["session_id"],
@@ -172,6 +195,9 @@ def row_to_agent_event(row: sqlite3.Row) -> AgentEventRecord:
         content=loads_json(row["content"], {}),
         command_id=row["command_id"],
         parent_seq=row["parent_seq"],
+        node_id=row["node_id"] or "event-{}".format(row["seq"]),
+        trace_refs=loads_json(row["trace_refs"], []),
+        artifact_refs=loads_json(row["artifact_refs"], []),
         metadata=loads_json(row["metadata"], {}),
         created_at=row["created_at"],
     )
@@ -202,6 +228,10 @@ def row_to_session_digest(row: sqlite3.Row) -> SessionDigestRecord:
         decisions=loads_json(row["decisions"], []),
         open_questions=loads_json(row["open_questions"], []),
         rejected_candidates=loads_json(row["rejected_candidates"], []),
+        node_id=row["node_id"] or "digest-{}".format(row["digest_id"]),
+        trace_refs=loads_json(row["trace_refs"], []),
+        artifact_refs=loads_json(row["artifact_refs"], []),
+        task_canvas=row["task_canvas"] or "",
         created_at=row["created_at"],
     )
 
@@ -222,6 +252,11 @@ def row_to_memory_candidate(row: sqlite3.Row) -> MemoryCandidateRecord:
         similar_to=loads_json(row["similar_to"], []),
         conflicts_with=loads_json(row["conflicts_with"], []),
         recommended_action=row["recommended_action"],
+        node_id=row["node_id"] or "memory-{}".format(row["candidate_id"]),
+        trace_refs=loads_json(row["trace_refs"], []),
+        artifact_refs=loads_json(row["artifact_refs"], []),
+        memory_level=row["memory_level"] or "L1",
+        decision_status=row["decision_status"] or memory_status_to_decision_status(row["status"]),
         created_at=row["created_at"],
         resolved_at=row["resolved_at"],
     )
@@ -249,6 +284,37 @@ def row_to_memory_cluster(row: sqlite3.Row) -> MemoryClusterRecord:
         quality_score=row["quality_score"],
         updated_at=row["updated_at"],
         metadata=loads_json(row["metadata"], {}),
+    )
+
+
+def row_to_artifact(row: sqlite3.Row) -> ArtifactRecord:
+    return ArtifactRecord(
+        artifact_id=row["artifact_id"],
+        session_id=row["session_id"],
+        agent_id=row["agent_id"],
+        kind=row["kind"],
+        path=row["path"],
+        sha256=row["sha256"],
+        size_bytes=row["size_bytes"],
+        summary=row["summary"],
+        trace_refs=loads_json(row["trace_refs"], []),
+        metadata=loads_json(row["metadata"], {}),
+        created_at=row["created_at"],
+    )
+
+
+def row_to_rejected_knowledge(row: sqlite3.Row) -> RejectedKnowledgeRecord:
+    return RejectedKnowledgeRecord(
+        rejected_id=row["rejected_id"],
+        session_id=row["session_id"],
+        candidate_id=row["candidate_id"],
+        accepted_candidate_id=row["accepted_candidate_id"],
+        decision_type=row["decision_type"],
+        reason=row["reason"],
+        trace_refs=loads_json(row["trace_refs"], []),
+        artifact_refs=loads_json(row["artifact_refs"], []),
+        metadata=loads_json(row["metadata"], {}),
+        created_at=row["created_at"],
     )
 
 
@@ -546,6 +612,9 @@ class RelayCoreStorage:
         mode: Optional[str] = None,
         command_id: Optional[str] = None,
         parent_seq: Optional[int] = None,
+        node_id: Optional[str] = None,
+        trace_refs: Optional[List[Any]] = None,
+        artifact_refs: Optional[List[Any]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         created_at: Optional[str] = None,
     ) -> AgentEventRecord:
@@ -558,6 +627,9 @@ class RelayCoreStorage:
             "content": dumps_json(ensure_json_object("content", content)),
             "command_id": command_id,
             "parent_seq": parent_seq,
+            "node_id": node_id,
+            "trace_refs": dumps_json(ensure_json_list("trace_refs", trace_refs)),
+            "artifact_refs": dumps_json(ensure_json_list("artifact_refs", artifact_refs)),
             "metadata": dumps_json(ensure_json_object("metadata", metadata)),
             "created_at": created_at or utc_now(),
         }
@@ -568,7 +640,29 @@ class RelayCoreStorage:
             [values[column] for column in columns],
         )
         self.connection.commit()
-        return self.get_event(cursor.lastrowid)
+        event = self.get_event(cursor.lastrowid)
+        if not event.node_id or not event.trace_refs:
+            event_node_id = event.node_id or "event-{}".format(event.seq)
+            event_trace_refs = event.trace_refs or [
+                {
+                    "session_id": event.session_id,
+                    "event_seq": event.seq,
+                    "candidate_id": None,
+                    "artifact_id": None,
+                    "source_location": "agent_events:{}".format(event.seq),
+                }
+            ]
+            self._update(
+                "agent_events",
+                "seq",
+                event.seq,
+                {
+                    "node_id": event_node_id,
+                    "trace_refs": dumps_json(event_trace_refs),
+                },
+            )
+            event = self.get_event(event.seq)
+        return event
 
     def get_event(self, seq: int) -> AgentEventRecord:
         row = self._fetch_one(
@@ -705,6 +799,10 @@ class RelayCoreStorage:
         decisions: Optional[List[Any]] = None,
         open_questions: Optional[List[Any]] = None,
         rejected_candidates: Optional[List[Any]] = None,
+        node_id: Optional[str] = None,
+        trace_refs: Optional[List[Any]] = None,
+        artifact_refs: Optional[List[Any]] = None,
+        task_canvas: str = "",
         created_at: Optional[str] = None,
     ) -> SessionDigestRecord:
         self._insert(
@@ -718,6 +816,10 @@ class RelayCoreStorage:
                 "decisions": dumps_json(ensure_json_list("decisions", decisions)),
                 "open_questions": dumps_json(ensure_json_list("open_questions", open_questions)),
                 "rejected_candidates": dumps_json(ensure_json_list("rejected_candidates", rejected_candidates)),
+                "node_id": node_id or "digest-{}".format(digest_id),
+                "trace_refs": dumps_json(ensure_json_list("trace_refs", trace_refs)),
+                "artifact_refs": dumps_json(ensure_json_list("artifact_refs", artifact_refs)),
+                "task_canvas": task_canvas,
                 "created_at": created_at or utc_now(),
             },
         )
@@ -773,11 +875,19 @@ class RelayCoreStorage:
         similar_to: Optional[List[Any]] = None,
         conflicts_with: Optional[List[Any]] = None,
         recommended_action: str = "",
+        node_id: Optional[str] = None,
+        trace_refs: Optional[List[Any]] = None,
+        artifact_refs: Optional[List[Any]] = None,
+        memory_level: str = "L1",
+        decision_status: Optional[str] = None,
         created_at: Optional[str] = None,
         resolved_at: Optional[str] = None,
     ) -> MemoryCandidateRecord:
         if status not in MEMORY_CANDIDATE_STATUSES:
             raise ValidationError("unsupported memory candidate status {!r}".format(status))
+        ensure_choice("memory_level", memory_level, tuple(sorted(MEMORY_LEVELS)))
+        resolved_decision_status = decision_status or memory_status_to_decision_status(status)
+        ensure_choice("decision_status", resolved_decision_status, tuple(sorted(DECISION_STATUSES)))
         self._insert(
             "memory_candidates",
             {
@@ -795,6 +905,11 @@ class RelayCoreStorage:
                 "similar_to": dumps_json(ensure_json_list("similar_to", similar_to)),
                 "conflicts_with": dumps_json(ensure_json_list("conflicts_with", conflicts_with)),
                 "recommended_action": recommended_action,
+                "node_id": node_id or "memory-{}".format(candidate_id),
+                "trace_refs": dumps_json(ensure_json_list("trace_refs", trace_refs)),
+                "artifact_refs": dumps_json(ensure_json_list("artifact_refs", artifact_refs)),
+                "memory_level": memory_level,
+                "decision_status": resolved_decision_status,
                 "created_at": created_at or utc_now(),
                 "resolved_at": resolved_at,
             },
@@ -842,6 +957,11 @@ class RelayCoreStorage:
         similar_to: Optional[List[Any]] = None,
         conflicts_with: Optional[List[Any]] = None,
         recommended_action: Optional[str] = None,
+        node_id: Optional[str] = None,
+        trace_refs: Optional[List[Any]] = None,
+        artifact_refs: Optional[List[Any]] = None,
+        memory_level: Optional[str] = None,
+        decision_status: Optional[str] = None,
         resolved_at: Optional[str] = None,
     ) -> MemoryCandidateRecord:
         values: Dict[str, Any] = {}
@@ -861,6 +981,18 @@ class RelayCoreStorage:
             values["conflicts_with"] = dumps_json(ensure_json_list("conflicts_with", conflicts_with))
         if recommended_action is not None:
             values["recommended_action"] = recommended_action
+        if node_id is not None:
+            values["node_id"] = node_id
+        if trace_refs is not None:
+            values["trace_refs"] = dumps_json(ensure_json_list("trace_refs", trace_refs))
+        if artifact_refs is not None:
+            values["artifact_refs"] = dumps_json(ensure_json_list("artifact_refs", artifact_refs))
+        if memory_level is not None:
+            ensure_choice("memory_level", memory_level, tuple(sorted(MEMORY_LEVELS)))
+            values["memory_level"] = memory_level
+        if decision_status is not None:
+            ensure_choice("decision_status", decision_status, tuple(sorted(DECISION_STATUSES)))
+            values["decision_status"] = decision_status
         if resolved_at is not None:
             values["resolved_at"] = resolved_at
         self._update("memory_candidates", "candidate_id", candidate_id, values)
@@ -872,12 +1004,16 @@ class RelayCoreStorage:
         status: str,
         *,
         recommended_action: Optional[str] = None,
+        decision_status: Optional[str] = None,
         resolved_at: Optional[str] = None,
     ) -> MemoryCandidateRecord:
         if status == "pending" or status not in MEMORY_CANDIDATE_STATUSES:
             raise ValidationError("memory candidate resolution status must be supported and non-pending")
+        resolved_decision_status = decision_status or memory_status_to_decision_status(status)
+        ensure_choice("decision_status", resolved_decision_status, tuple(sorted(DECISION_STATUSES)))
         values: Dict[str, Any] = {
             "status": status,
+            "decision_status": resolved_decision_status,
             "resolved_at": resolved_at or utc_now(),
         }
         if recommended_action is not None:
@@ -992,6 +1128,124 @@ class RelayCoreStorage:
             return None
         return row_to_memory_cluster(row)
 
+    def create_artifact(
+        self,
+        artifact_id: str,
+        kind: str,
+        path: str,
+        sha256: str,
+        *,
+        session_id: Optional[str] = None,
+        agent_id: Optional[str] = None,
+        size_bytes: int = 0,
+        summary: str = "",
+        trace_refs: Optional[List[Any]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        created_at: Optional[str] = None,
+    ) -> ArtifactRecord:
+        self._insert(
+            "artifacts",
+            {
+                "artifact_id": artifact_id,
+                "session_id": session_id,
+                "agent_id": agent_id,
+                "kind": kind,
+                "path": path,
+                "sha256": sha256,
+                "size_bytes": size_bytes,
+                "summary": summary,
+                "trace_refs": dumps_json(ensure_json_list("trace_refs", trace_refs)),
+                "metadata": dumps_json(ensure_json_object("metadata", metadata)),
+                "created_at": created_at or utc_now(),
+            },
+        )
+        return self.get_artifact(artifact_id)
+
+    def get_artifact(self, artifact_id: str) -> ArtifactRecord:
+        row = self._fetch_one(
+            "SELECT * FROM artifacts WHERE artifact_id = ?",
+            (artifact_id,),
+            "artifact {!r} not found".format(artifact_id),
+        )
+        return row_to_artifact(row)
+
+    def list_artifacts(self, session_id: Optional[str] = None, limit: int = 100) -> List[ArtifactRecord]:
+        sql = "SELECT * FROM artifacts"
+        parameters: List[Any] = []
+        if session_id is not None:
+            sql += " WHERE session_id = ?"
+            parameters.append(session_id)
+        sql += " ORDER BY created_at DESC LIMIT ?"
+        parameters.append(limit)
+        rows = self.connection.execute(sql, parameters).fetchall()
+        return [row_to_artifact(row) for row in rows]
+
+    def create_rejected_knowledge(
+        self,
+        rejected_id: str,
+        candidate_id: str,
+        decision_type: str,
+        *,
+        session_id: Optional[str] = None,
+        accepted_candidate_id: Optional[str] = None,
+        reason: str = "",
+        trace_refs: Optional[List[Any]] = None,
+        artifact_refs: Optional[List[Any]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        created_at: Optional[str] = None,
+    ) -> RejectedKnowledgeRecord:
+        self._insert(
+            "rejected_knowledge",
+            {
+                "rejected_id": rejected_id,
+                "session_id": session_id,
+                "candidate_id": candidate_id,
+                "accepted_candidate_id": accepted_candidate_id,
+                "decision_type": decision_type,
+                "reason": reason,
+                "trace_refs": dumps_json(ensure_json_list("trace_refs", trace_refs)),
+                "artifact_refs": dumps_json(ensure_json_list("artifact_refs", artifact_refs)),
+                "metadata": dumps_json(ensure_json_object("metadata", metadata)),
+                "created_at": created_at or utc_now(),
+            },
+        )
+        return self.get_rejected_knowledge(rejected_id)
+
+    def get_rejected_knowledge(self, rejected_id: str) -> RejectedKnowledgeRecord:
+        row = self._fetch_one(
+            "SELECT * FROM rejected_knowledge WHERE rejected_id = ?",
+            (rejected_id,),
+            "rejected knowledge {!r} not found".format(rejected_id),
+        )
+        return row_to_rejected_knowledge(row)
+
+    def list_rejected_knowledge(
+        self,
+        *,
+        session_id: Optional[str] = None,
+        candidate_id: Optional[str] = None,
+        accepted_candidate_id: Optional[str] = None,
+        limit: int = 100,
+    ) -> List[RejectedKnowledgeRecord]:
+        clauses: List[str] = []
+        parameters: List[Any] = []
+        if session_id is not None:
+            clauses.append("session_id = ?")
+            parameters.append(session_id)
+        if candidate_id is not None:
+            clauses.append("candidate_id = ?")
+            parameters.append(candidate_id)
+        if accepted_candidate_id is not None:
+            clauses.append("accepted_candidate_id = ?")
+            parameters.append(accepted_candidate_id)
+        sql = "SELECT * FROM rejected_knowledge"
+        if clauses:
+            sql += " WHERE " + " AND ".join(clauses)
+        sql += " ORDER BY created_at DESC LIMIT ?"
+        parameters.append(limit)
+        rows = self.connection.execute(sql, parameters).fetchall()
+        return [row_to_rejected_knowledge(row) for row in rows]
+
     def append_audit_log(
         self,
         actor: str,
@@ -1064,6 +1318,7 @@ class RelayCoreStorage:
             "memory_occurrences",
             "memory_clusters",
             "artifacts",
+            "rejected_knowledge",
             "audit_logs",
         ]
         snapshot: Dict[str, Any] = {"exported_at": utc_now(), "tables": {}}
@@ -1092,7 +1347,9 @@ __all__ = [
     "DEFAULT_DB_PATH",
     "RelayCoreStorage",
     "InvalidTransitionError",
+    "DECISION_STATUSES",
     "MEMORY_CANDIDATE_STATUSES",
+    "MEMORY_LEVELS",
     "NotFoundError",
     "PRAGMA_STATEMENTS",
     "StorageError",

@@ -37,7 +37,9 @@ UI_TEXT = {
         "recent_events": "Recent Events",
         "tracked_count": "{count} tracked",
         "session_detail": "Session Detail",
+        "session_overview": "Session Overview",
         "session_detail_lead": "Current focus, command traffic, and live timeline for the selected task.",
+        "session_overview_lead": "Task goal, current state, and knowledge posture for the selected session.",
         "no_session_selected": "No session selected",
         "command_publisher": "Command Publisher",
         "command_publisher_lead": "Publish a structured command with explicit routing and permission scope.",
@@ -56,6 +58,25 @@ UI_TEXT = {
         "token_note": "Approximation only. Full content stays hidden unless an explicit expansion handle is requested.",
         "memory_candidate_queue": "Memory Candidate Queue",
         "queued_count": "{count} queued",
+        "mermaid_task_canvas": "Mermaid Task Canvas",
+        "trace_inspector": "Trace Inspector",
+        "rejected_knowledge": "Rejected Knowledge",
+        "decision_ledger": "Decision Ledger",
+        "trace_count": "{count} trace refs",
+        "ledger_count": "{count} entries",
+        "level": "Level",
+        "decision_status": "Decision Status",
+        "evidence": "Evidence",
+        "task_canvas_empty": "No task canvas yet.",
+        "task_canvas_desc": "Digests will publish a Mermaid task canvas once enough events are committed.",
+        "trace_inspector_empty": "No traceable evidence yet.",
+        "trace_inspector_desc": "Trace refs will connect digests and memories back to events and artifacts.",
+        "rejected_knowledge_empty": "No rejected knowledge yet.",
+        "rejected_knowledge_desc": "Superseded or rejected options will appear here with reasons and accepted replacements.",
+        "decision_ledger_empty": "No decisions recorded yet.",
+        "decision_ledger_desc": "Accepted decisions, open questions, and rejected options will accumulate here.",
+        "accepted_candidate": "Accepted candidate",
+        "reason": "Reason",
         "conflict_resolution_panel": "Conflict Resolution Panel",
         "conflicts_count": "{count} conflicts",
         "resolve_conflict": "Resolve Conflict",
@@ -174,7 +195,9 @@ UI_TEXT = {
         "recent_events": "最近事件",
         "tracked_count": "共 {count} 个",
         "session_detail": "会话详情",
+        "session_overview": "会话总览",
         "session_detail_lead": "查看当前任务焦点、命令流转和实时事件时间线。",
+        "session_overview_lead": "查看所选会话的任务目标、当前状态和知识沉淀情况。",
         "no_session_selected": "未选择会话",
         "command_publisher": "命令发布",
         "command_publisher_lead": "以明确路由和权限范围发布结构化命令。",
@@ -193,6 +216,25 @@ UI_TEXT = {
         "token_note": "这里只是近似估算。除非明确展开，否则不会直接暴露完整内容。",
         "memory_candidate_queue": "记忆候选队列",
         "queued_count": "共 {count} 条",
+        "mermaid_task_canvas": "Mermaid 任务画布",
+        "trace_inspector": "追溯检查器",
+        "rejected_knowledge": "被拒知识",
+        "decision_ledger": "决策账本",
+        "trace_count": "共 {count} 条追溯",
+        "ledger_count": "共 {count} 条记录",
+        "level": "层级",
+        "decision_status": "决策状态",
+        "evidence": "证据",
+        "task_canvas_empty": "还没有任务画布。",
+        "task_canvas_desc": "摘要生成后会在这里发布 Mermaid 任务画布。",
+        "trace_inspector_empty": "还没有可追溯证据。",
+        "trace_inspector_desc": "trace refs 会把摘要和记忆回连到事件与工件。",
+        "rejected_knowledge_empty": "还没有被拒知识。",
+        "rejected_knowledge_desc": "被替换或被拒绝的方案会连同原因和采纳方案显示在这里。",
+        "decision_ledger_empty": "还没有决策记录。",
+        "decision_ledger_desc": "已采纳决策、未决问题和被拒选项会逐步沉淀到这里。",
+        "accepted_candidate": "采纳候选",
+        "reason": "原因",
         "conflict_resolution_panel": "冲突处理面板",
         "conflicts_count": "{count} 个冲突",
         "resolve_conflict": "解决冲突",
@@ -376,6 +418,8 @@ class MissionControlUI:
         digests = self.storage.list_session_digests(selected_id, limit=6) if selected_id else []
         agent_states = self.storage.list_agent_states(session_id=selected_id, limit=12) if selected_id else []
         audit_logs = self.storage.list_audit_logs(limit=12)
+        rejected_knowledge = self.storage.list_rejected_knowledge(session_id=selected_id, limit=10) if selected_id else []
+        latest_digest = digests[0] if digests else None
         conflicts = [candidate for candidate in candidates if candidate.status == "pending" and candidate.conflicts_with]
         token_snapshot = self._build_token_snapshot(selected_session, commands, events, candidates, digests)
         commit_warning = self._render_commit_warning(selected_session, lang)
@@ -410,6 +454,7 @@ class MissionControlUI:
         radial-gradient(circle at top right, rgba(54,92,71,0.14), transparent 24%),
         linear-gradient(180deg, #fbf6eb 0%, #efe3cf 100%);
       min-height: 100vh;
+      overflow-x: hidden;
     }}
     body::before {{
       content: "";
@@ -423,6 +468,7 @@ class MissionControlUI:
     .shell {{
       width: min(1380px, calc(100vw - 32px));
       margin: 24px auto 56px;
+      overflow-x: clip;
     }}
     .topbar {{
       display: flex;
@@ -537,6 +583,9 @@ class MissionControlUI:
       gap: 18px;
       margin-top: 18px;
     }}
+    .grid > * {{
+      min-width: 0;
+    }}
     .sidebar, .panel {{
       background: var(--paper);
       border: 1px solid rgba(31,27,23,0.08);
@@ -549,13 +598,17 @@ class MissionControlUI:
       align-self: start;
       position: sticky;
       top: 18px;
+      overflow: hidden;
     }}
     .content {{
       display: grid;
       gap: 18px;
+      min-width: 0;
     }}
     .panel {{
       padding: 20px;
+      min-width: 0;
+      overflow: hidden;
     }}
     .panel h2 {{
       margin: 0 0 6px;
@@ -580,6 +633,8 @@ class MissionControlUI:
       border: 1px solid rgba(31,27,23,0.08);
       background: rgba(255,255,255,0.74);
       transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+      min-width: 0;
+      overflow-wrap: anywhere;
     }}
     .session-card:hover {{
       transform: translateY(-1px);
@@ -604,8 +659,11 @@ class MissionControlUI:
     }}
     .three-up {{
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 14px;
+    }}
+    .two-up > *, .three-up > *, .kvs > *, .toolbar > * {{
+      min-width: 0;
     }}
     .badge {{
       display: inline-flex;
@@ -627,12 +685,16 @@ class MissionControlUI:
     .list {{
       display: grid;
       gap: 12px;
+      min-width: 0;
     }}
     .list-item {{
       border: 1px solid var(--line);
       border-radius: 18px;
       padding: 14px;
       background: rgba(255,255,255,0.58);
+      min-width: 0;
+      overflow: hidden;
+      overflow-wrap: anywhere;
     }}
     .list-item pre {{
       margin: 10px 0 0;
@@ -640,12 +702,16 @@ class MissionControlUI:
       font-size: 12px;
       line-height: 1.45;
       white-space: pre-wrap;
-      word-break: break-word;
+      word-break: break-all;
+      overflow-wrap: anywhere;
+      max-width: 100%;
+      overflow-x: auto;
       color: #3b332c;
     }}
     .timeline {{
       display: grid;
       gap: 12px;
+      min-width: 0;
     }}
     .timeline-item {{
       position: relative;
@@ -653,6 +719,8 @@ class MissionControlUI:
       border-left: 4px solid rgba(54,92,71,0.24);
       border-radius: 0 18px 18px 0;
       background: rgba(255,255,255,0.56);
+      min-width: 0;
+      overflow: hidden;
     }}
     .timeline-item.live {{
       animation: pulse 1.4s ease;
@@ -672,6 +740,8 @@ class MissionControlUI:
       border-radius: 14px;
       background: rgba(255,255,255,0.62);
       border: 1px solid var(--line);
+      overflow: hidden;
+      overflow-wrap: anywhere;
     }}
     form {{
       display: grid;
@@ -800,8 +870,8 @@ class MissionControlUI:
         <section class="panel">
           <div class="section-title">
             <div>
-              <h2>{session_detail_label}</h2>
-              <p class="lead">{session_detail_lead}</p>
+              <h2>{session_overview_label}</h2>
+              <p class="lead">{session_overview_lead}</p>
             </div>
             <span class="badge">{selected_label}</span>
           </div>
@@ -848,12 +918,32 @@ class MissionControlUI:
         </div>
         <div class="two-up">
           <section class="panel">
+            <div class="section-title"><h2>{task_canvas_label}</h2><span class="badge">{digest_compact_label}</span></div>
+            <div class="list">{task_canvas_items}</div>
+          </section>
+          <section class="panel">
+            <div class="section-title"><h2>{trace_inspector_label}</h2><span class="badge">{trace_count_label}</span></div>
+            <div class="list">{trace_items}</div>
+          </section>
+        </div>
+        <div class="two-up">
+          <section class="panel">
             <div class="section-title"><h2>{memory_candidate_queue_label}</h2><span class="badge">{candidate_queue_label}</span></div>
             <div class="list">{candidate_items}</div>
           </section>
           <section class="panel">
+            <div class="section-title"><h2>{rejected_knowledge_label}</h2><span class="badge warn">{rejected_count_label}</span></div>
+            <div class="list">{rejected_items}</div>
+          </section>
+        </div>
+        <div class="two-up">
+          <section class="panel">
             <div class="section-title"><h2>{conflict_resolution_label}</h2><span class="badge warn">{conflict_count_label}</span></div>
             <div class="list">{conflict_items}</div>
+          </section>
+          <section class="panel">
+            <div class="section-title"><h2>{decision_ledger_label}</h2><span class="badge">{decision_ledger_count_label}</span></div>
+            <div class="list">{decision_items}</div>
           </section>
         </div>
         <div class="two-up">
@@ -921,6 +1011,8 @@ class MissionControlUI:
             session_tracked_label=_esc(self._t(lang, "tracked_count", count=len(sessions))),
             session_detail_label=_esc(self._t(lang, "session_detail")),
             session_detail_lead=_esc(self._t(lang, "session_detail_lead")),
+            session_overview_label=_esc(self._t(lang, "session_overview")),
+            session_overview_lead=_esc(self._t(lang, "session_overview_lead")),
             command_publisher_label=_esc(self._t(lang, "command_publisher")),
             command_publisher_lead=_esc(self._t(lang, "command_publisher_lead")),
             no_shell_execution=_esc(self._t(lang, "no_shell_execution")),
@@ -937,16 +1029,27 @@ class MissionControlUI:
             command_payloads_label=_esc(self._t(lang, "command_payloads")),
             candidate_summaries_label=_esc(self._t(lang, "candidate_summaries")),
             token_note=_esc(self._t(lang, "token_note")),
+            task_canvas_label=_esc(self._t(lang, "mermaid_task_canvas")),
+            trace_inspector_label=_esc(self._t(lang, "trace_inspector")),
             memory_candidate_queue_label=_esc(self._t(lang, "memory_candidate_queue")),
             candidate_queue_label=_esc(self._t(lang, "queued_count", count=len(candidates))),
+            rejected_knowledge_label=_esc(self._t(lang, "rejected_knowledge")),
+            rejected_count_label=_esc(self._t(lang, "queued_count", count=len(rejected_knowledge))),
             conflict_resolution_label=_esc(self._t(lang, "conflict_resolution_panel")),
             conflict_count_label=_esc(self._t(lang, "conflicts_count", count=len(conflicts))),
+            decision_ledger_label=_esc(self._t(lang, "decision_ledger")),
+            decision_ledger_count_label=_esc(
+                self._t(lang, "ledger_count", count=len(rejected_knowledge) + len(digests))
+            ),
             live_timeline_label=_esc(self._t(lang, "live_timeline")),
             sse_ready_label=_esc(self._t(lang, "sse_ready")),
             audit_log_label=_esc(self._t(lang, "audit_log_viewer")),
             audit_recent_label=_esc(self._t(lang, "recent_count", count=len(audit_logs))),
             recent_digests_label=_esc(self._t(lang, "recent_digests")),
             digest_compact_label=_esc(self._t(lang, "compact_count", count=len(digests))),
+            trace_count_label=_esc(
+                self._t(lang, "trace_count", count=len((latest_digest.trace_refs if latest_digest else [])))
+            ),
             token_percent=min(100, token_snapshot["percent"]),
             session_count=len(sessions),
             agent_count=len(agent_states),
@@ -969,8 +1072,12 @@ class MissionControlUI:
             candidate_tokens=_esc(token_snapshot["candidate_tokens"]),
             candidate_count=len(candidates),
             candidate_items=self._render_candidates(candidates, lang),
+            task_canvas_items=self._render_task_canvas(latest_digest, lang),
+            trace_items=self._render_trace_inspector(latest_digest, candidates, lang),
+            rejected_items=self._render_rejected_knowledge(rejected_knowledge, lang),
             conflict_count=len(conflicts),
             conflict_items=self._render_conflicts(conflicts, selected_id, lang),
+            decision_items=self._render_decision_ledger(digests, rejected_knowledge, lang),
             timeline_items=self._render_timeline(events, lang),
             audit_count=len(audit_logs),
             audit_items=self._render_audit_logs(audit_logs, lang),
@@ -1106,10 +1213,12 @@ class MissionControlUI:
         radial-gradient(circle at top right, rgba(54,92,71,0.14), transparent 24%),
         linear-gradient(180deg, #fbf6eb 0%, #efe3cf 100%);
       min-height: 100vh;
+      overflow-x: hidden;
     }}
     .shell {{
       width: min(1380px, calc(100vw - 32px));
       margin: 24px auto 56px;
+      overflow-x: clip;
     }}
     .topbar {{
       display: flex;
@@ -1213,8 +1322,13 @@ class MissionControlUI:
       grid-template-columns: 290px 1fr;
       gap: 18px;
     }}
+    .grid > * {{
+      min-width: 0;
+    }}
     .sidebar, .panel {{
       padding: 18px;
+      min-width: 0;
+      overflow: hidden;
     }}
     .sidebar {{
       align-self: start;
@@ -1225,6 +1339,7 @@ class MissionControlUI:
       display: grid;
       gap: 10px;
       margin-top: 14px;
+      min-width: 0;
     }}
     .session-card, .filter-link {{
       display: block;
@@ -1234,6 +1349,8 @@ class MissionControlUI:
       padding: 12px 14px;
       border: 1px solid rgba(31,27,23,0.08);
       background: rgba(255,255,255,0.72);
+      min-width: 0;
+      overflow-wrap: anywhere;
     }}
     .session-card.active, .filter-link.active {{
       border-color: rgba(197,86,43,0.5);
@@ -1247,6 +1364,9 @@ class MissionControlUI:
       grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.85fr);
       gap: 16px;
       margin-bottom: 18px;
+    }}
+    .toolbar > * {{
+      min-width: 0;
     }}
     .search-panel, .scope-panel {{
       border: 1px solid rgba(31,27,23,0.08);
@@ -1310,6 +1430,8 @@ class MissionControlUI:
       padding: 10px 12px;
       border: 1px solid rgba(31,27,23,0.08);
       background: rgba(255,255,255,0.8);
+      min-width: 0;
+      overflow-wrap: anywhere;
     }}
     .scope-chip.active {{
       border-color: rgba(54,92,71,0.4);
@@ -1320,6 +1442,9 @@ class MissionControlUI:
       border-radius: 20px;
       padding: 16px;
       background: rgba(255,255,255,0.64);
+      min-width: 0;
+      overflow: hidden;
+      overflow-wrap: anywhere;
     }}
     .memory-card pre {{
       margin: 10px 0 0;
@@ -1327,7 +1452,10 @@ class MissionControlUI:
       font-size: 12px;
       line-height: 1.45;
       white-space: pre-wrap;
-      word-break: break-word;
+      word-break: break-all;
+      overflow-wrap: anywhere;
+      max-width: 100%;
+      overflow-x: auto;
       color: #3b332c;
     }}
     .row {{
@@ -1809,16 +1937,122 @@ class MissionControlUI:
             )
         return "".join(
             "<article class='list-item'><strong>{title}</strong> <span class='badge'>{status}</span>"
-            "<div class='muted'>{memory_type} · {recommended}</div>"
+            "<div class='muted'>{memory_type} · {recommended} · {level_label} {level} · {decision_label} {decision_status}</div>"
             "<pre>{summary}</pre></article>".format(
                 title=_esc(candidate.title),
                 status=_esc(self._display_status(lang, candidate.status)),
                 memory_type=_esc(self._display_memory_type(lang, candidate.type)),
                 recommended=_esc(candidate.recommended_action or self._t(lang, "review")),
+                level_label=_esc(self._t(lang, "level")),
+                level=_esc(candidate.memory_level),
+                decision_label=_esc(self._t(lang, "decision_status")),
+                decision_status=_esc(candidate.decision_status),
                 summary=_esc(candidate.summary or candidate.content[:180]),
             )
             for candidate in candidates
         )
+
+    def _render_task_canvas(self, digest: Optional[Any], lang: str) -> str:
+        if digest is None or not getattr(digest, "task_canvas", ""):
+            return "<div class='list-item'><strong>{}</strong><div class='muted'>{}</div></div>".format(
+                _esc(self._t(lang, "task_canvas_empty")),
+                _esc(self._t(lang, "task_canvas_desc")),
+            )
+        return "<article class='list-item'><strong>{}</strong><pre>{}</pre></article>".format(
+            _esc(digest.summary),
+            _esc(digest.task_canvas),
+        )
+
+    def _render_trace_inspector(self, digest: Optional[Any], candidates: List[Any], lang: str) -> str:
+        trace_refs: List[Any] = []
+        artifact_refs: List[Any] = []
+        if digest is not None:
+            trace_refs.extend(digest.trace_refs)
+            artifact_refs.extend(digest.artifact_refs)
+        for candidate in candidates[:3]:
+            trace_refs.extend(candidate.trace_refs)
+            artifact_refs.extend(candidate.artifact_refs)
+        bundle = self.event_log.build_trace_bundle(trace_refs=trace_refs, artifact_refs=artifact_refs)
+        if not bundle["trace_refs"] and not bundle["events"] and not bundle["artifacts"]:
+            return "<div class='list-item'><strong>{}</strong><div class='muted'>{}</div></div>".format(
+                _esc(self._t(lang, "trace_inspector_empty")),
+                _esc(self._t(lang, "trace_inspector_desc")),
+            )
+        items = [
+            "<article class='list-item'><strong>{}</strong><pre>{}</pre></article>".format(
+                _esc(self._t(lang, "evidence")),
+                _json_preview(bundle["trace_refs"][:8]),
+            )
+        ]
+        if bundle["events"]:
+            items.append(
+                "<article class='list-item'><strong>Events</strong><pre>{}</pre></article>".format(
+                    _json_preview(bundle["events"][:4])
+                )
+            )
+        if bundle["artifacts"]:
+            items.append(
+                "<article class='list-item'><strong>Artifacts</strong><pre>{}</pre></article>".format(
+                    _json_preview(bundle["artifacts"][:4])
+                )
+            )
+        return "".join(items)
+
+    def _render_rejected_knowledge(self, items: List[Any], lang: str) -> str:
+        if not items:
+            return "<div class='list-item'><strong>{}</strong><div class='muted'>{}</div></div>".format(
+                _esc(self._t(lang, "rejected_knowledge_empty")),
+                _esc(self._t(lang, "rejected_knowledge_desc")),
+            )
+        return "".join(
+            "<article class='list-item'><strong>{candidate}</strong> <span class='badge warn'>{decision_type}</span>"
+            "<div class='muted'>{accepted_label}: {accepted}</div>"
+            "<pre>{details}</pre></article>".format(
+                candidate=_esc(item.candidate_id),
+                decision_type=_esc(item.decision_type),
+                accepted_label=_esc(self._t(lang, "accepted_candidate")),
+                accepted=_esc(item.accepted_candidate_id or self._t(lang, "not_available")),
+                details=_json_preview(
+                    {
+                        "reason": item.reason,
+                        "trace_refs": item.trace_refs,
+                        "artifact_refs": item.artifact_refs,
+                        "metadata": item.metadata,
+                    }
+                ),
+            )
+            for item in items
+        )
+
+    def _render_decision_ledger(self, digests: List[Any], rejected_knowledge: List[Any], lang: str) -> str:
+        ledger_items: List[str] = []
+        for digest in digests[:3]:
+            ledger_items.append(
+                "<article class='list-item'><strong>{}</strong><pre>{}</pre></article>".format(
+                    _esc(digest.summary),
+                    _json_preview(
+                        {
+                            "decisions": digest.decisions,
+                            "open_questions": digest.open_questions,
+                            "node_id": digest.node_id,
+                        }
+                    ),
+                )
+            )
+        for item in rejected_knowledge[:3]:
+            ledger_items.append(
+                "<article class='list-item'><strong>{}</strong><div class='muted'>{}</div><pre>{}</pre></article>".format(
+                    _esc(item.candidate_id),
+                    _esc(self._t(lang, "reason")),
+                    _json_preview({"reason": item.reason, "accepted_candidate_id": item.accepted_candidate_id}),
+                )
+            )
+        if not ledger_items:
+            return "<div class='list-item'><strong>{}</strong><div class='muted'>{}</div></div>".format(
+                _esc(self._t(lang, "decision_ledger_empty")),
+                _esc(self._t(lang, "decision_ledger_desc")),
+            )
+        return "".join(ledger_items)
 
     def _render_memory_items(self, candidates: List[Any], lang: str) -> str:
         if not candidates:
@@ -1871,10 +2105,15 @@ class MissionControlUI:
                     structured_metadata_label=_esc(self._t(lang, "structured_metadata")),
                     meta=_json_preview(
                         {
+                            "node_id": candidate.node_id,
+                            "memory_level": candidate.memory_level,
+                            "decision_status": candidate.decision_status,
                             "tags": candidate.tags,
                             "rejected": candidate.rejected,
                             "similar_to": candidate.similar_to,
                             "conflicts_with": candidate.conflicts_with,
+                            "trace_refs": candidate.trace_refs,
+                            "artifact_refs": candidate.artifact_refs,
                             "recommended_action": candidate.recommended_action,
                             "resolved_at": candidate.resolved_at,
                         }

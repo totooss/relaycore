@@ -28,6 +28,24 @@ def build_client(tmp_path: Path):
         summary="Use SQLite for the MVP.",
         tags=["storage"],
         status="active",
+        trace_refs=[{"session_id": "session-1", "event_seq": 1, "source_location": "tests"}],
+        memory_level="L1",
+    )
+    storage.append_event(
+        session_id="session-1",
+        agent_id="codex-agent",
+        event_type="decision_note",
+        content={"summary": "Use SQLite for the MVP."},
+    )
+    storage.create_session_digest(
+        digest_id="digest-ui-1",
+        session_id="session-1",
+        from_seq=1,
+        to_seq=1,
+        summary="Digest with task canvas",
+        decisions=[{"candidate_id": "candidate-decision-1"}],
+        trace_refs=[{"session_id": "session-1", "event_seq": 1, "source_location": "tests"}],
+        task_canvas='graph TD\nA["decision_note #1"]',
     )
     storage.upsert_agent_state(
         agent_id="codex-agent",
@@ -70,6 +88,15 @@ def build_client(tmp_path: Path):
         resource_id="session-1",
         metadata={"source": "test"},
     )
+    storage.create_rejected_knowledge(
+        rejected_id="reject-ui-1",
+        session_id="session-1",
+        candidate_id="candidate-conflict-1",
+        accepted_candidate_id="candidate-decision-1",
+        decision_type="decision",
+        reason="SQLite remains the accepted MVP store.",
+        trace_refs=[{"session_id": "session-1", "event_seq": 1, "source_location": "tests"}],
+    )
     app = create_app(storage=storage, memory_quality=quality)
     app.testing = True
     return app.test_client(), storage
@@ -88,6 +115,10 @@ def test_mission_control_dashboard_renders_sections(tmp_path: Path) -> None:
         assert "Collaboration Modes" in body
         assert "Quick Publish adversarial" in body
         assert "Memory Candidate Queue" in body
+        assert "Mermaid Task Canvas" in body
+        assert "Trace Inspector" in body
+        assert "Rejected Knowledge" in body
+        assert "Decision Ledger" in body
         assert "Memory Viewer" in body
         assert "Conflict Resolution Panel" in body
         assert "Resolve Conflict" in body
@@ -218,6 +249,7 @@ def test_dashboard_supports_chinese_language_toggle(tmp_path: Path) -> None:
         assert "控制台" in body
         assert "记忆浏览" in body
         assert "命令发布" in body
+        assert "追溯检查器" in body
         assert 'name="lang" value="zh"' in body
     finally:
         storage.close()

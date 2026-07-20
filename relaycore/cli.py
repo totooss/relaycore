@@ -68,7 +68,14 @@ def command_serve(
         cors_allowlist=cors_origins or None,
         backup_dir=backup_dir,
     )
-    run_simple(hostname=host, port=port, application=app, use_reloader=False, use_debugger=False)
+    run_simple(
+        hostname=host,
+        port=port,
+        application=app,
+        use_reloader=False,
+        use_debugger=False,
+        threaded=True,
+    )
     return 0
 
 

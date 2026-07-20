@@ -3,7 +3,7 @@
 import argparse
 from datetime import datetime, timezone
 import sqlite3
-from typing import Iterable, Optional, Sequence
+from typing import Dict, Iterable, Optional, Sequence
 
 from .storage import DEFAULT_DB_PATH, PRAGMA_STATEMENTS, configure_connection, resolve_database_path
 
@@ -62,6 +62,9 @@ TABLE_STATEMENTS: Sequence[str] = (
       content TEXT NOT NULL,
       command_id TEXT,
       parent_seq INTEGER,
+      node_id TEXT,
+      trace_refs TEXT DEFAULT '[]',
+      artifact_refs TEXT DEFAULT '[]',
       metadata TEXT DEFAULT '{}',
       created_at TEXT NOT NULL
     );
@@ -90,6 +93,10 @@ TABLE_STATEMENTS: Sequence[str] = (
       decisions TEXT DEFAULT '[]',
       open_questions TEXT DEFAULT '[]',
       rejected_candidates TEXT DEFAULT '[]',
+      node_id TEXT,
+      trace_refs TEXT DEFAULT '[]',
+      artifact_refs TEXT DEFAULT '[]',
+      task_canvas TEXT DEFAULT '',
       created_at TEXT NOT NULL
     );
     """,
@@ -109,6 +116,11 @@ TABLE_STATEMENTS: Sequence[str] = (
       similar_to TEXT DEFAULT '[]',
       conflicts_with TEXT DEFAULT '[]',
       recommended_action TEXT DEFAULT '',
+      node_id TEXT,
+      trace_refs TEXT DEFAULT '[]',
+      artifact_refs TEXT DEFAULT '[]',
+      memory_level TEXT DEFAULT 'L1',
+      decision_status TEXT DEFAULT 'candidate',
       created_at TEXT NOT NULL,
       resolved_at TEXT
     );
@@ -146,6 +158,22 @@ TABLE_STATEMENTS: Sequence[str] = (
       sha256 TEXT NOT NULL,
       size_bytes INTEGER DEFAULT 0,
       summary TEXT DEFAULT '',
+      trace_refs TEXT DEFAULT '[]',
+      metadata TEXT DEFAULT '{}',
+      created_at TEXT NOT NULL
+    );
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS rejected_knowledge (
+      rejected_id TEXT PRIMARY KEY,
+      session_id TEXT,
+      candidate_id TEXT NOT NULL,
+      accepted_candidate_id TEXT,
+      decision_type TEXT NOT NULL,
+      reason TEXT DEFAULT '',
+      trace_refs TEXT DEFAULT '[]',
+      artifact_refs TEXT DEFAULT '[]',
+      metadata TEXT DEFAULT '{}',
       created_at TEXT NOT NULL
     );
     """,
@@ -178,9 +206,36 @@ INDEX_STATEMENTS: Sequence[str] = (
     "CREATE INDEX IF NOT EXISTS idx_memory_candidates_session_id ON memory_candidates(session_id) WHERE session_id IS NOT NULL;",
     "CREATE INDEX IF NOT EXISTS idx_memory_occurrences_memory_id ON memory_occurrences(memory_id, observed_at);",
     "CREATE INDEX IF NOT EXISTS idx_artifacts_session_agent ON artifacts(session_id, agent_id, created_at);",
+    "CREATE INDEX IF NOT EXISTS idx_rejected_knowledge_session_created ON rejected_knowledge(session_id, created_at);",
+    "CREATE INDEX IF NOT EXISTS idx_rejected_knowledge_candidate ON rejected_knowledge(candidate_id, created_at);",
     "CREATE INDEX IF NOT EXISTS idx_audit_logs_actor_created_at ON audit_logs(actor, created_at);",
     "CREATE INDEX IF NOT EXISTS idx_audit_logs_resource ON audit_logs(resource_type, resource_id, created_at);",
 )
+
+REQUIRED_COLUMNS: Dict[str, Dict[str, str]] = {
+    "agent_events": {
+        "node_id": "TEXT",
+        "trace_refs": "TEXT DEFAULT '[]'",
+        "artifact_refs": "TEXT DEFAULT '[]'",
+    },
+    "session_digests": {
+        "node_id": "TEXT",
+        "trace_refs": "TEXT DEFAULT '[]'",
+        "artifact_refs": "TEXT DEFAULT '[]'",
+        "task_canvas": "TEXT DEFAULT ''",
+    },
+    "memory_candidates": {
+        "node_id": "TEXT",
+        "trace_refs": "TEXT DEFAULT '[]'",
+        "artifact_refs": "TEXT DEFAULT '[]'",
+        "memory_level": "TEXT DEFAULT 'L1'",
+        "decision_status": "TEXT DEFAULT 'candidate'",
+    },
+    "artifacts": {
+        "trace_refs": "TEXT DEFAULT '[]'",
+        "metadata": "TEXT DEFAULT '{}'",
+    },
+}
 
 
 def utc_now() -> str:
@@ -198,8 +253,27 @@ def ensure_base_schema(connection: sqlite3.Connection) -> None:
     for statement in TABLE_STATEMENTS:
         connection.execute(statement)
 
+    ensure_required_columns(connection)
+
     for statement in INDEX_STATEMENTS:
         connection.execute(statement)
+
+
+def ensure_required_columns(connection: sqlite3.Connection) -> None:
+    """Backfill newer additive columns for existing user databases."""
+    for table_name, columns in REQUIRED_COLUMNS.items():
+        existing = current_columns(connection, table_name)
+        for column_name, definition in columns.items():
+            if column_name in existing:
+                continue
+            connection.execute(
+                "ALTER TABLE {} ADD COLUMN {} {}".format(table_name, column_name, definition)
+            )
+
+
+def current_columns(connection: sqlite3.Connection, table_name: str) -> set:
+    rows = connection.execute("PRAGMA table_info({})".format(table_name)).fetchall()
+    return {row[1] for row in rows}
 
 
 def record_migration(connection: sqlite3.Connection, name: str) -> None:

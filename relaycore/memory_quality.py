@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from uuid import uuid4
 
 from .models import MemoryCandidateRecord
-from .storage import RelayCoreStorage, utc_now
+from .storage import MEMORY_LEVELS, RelayCoreStorage, utc_now
 
 if TYPE_CHECKING:
     from .event_log import EventLogService
@@ -58,6 +58,47 @@ def normalize_metadata(metadata: Optional[Dict[str, Any]]) -> Dict[str, Any]:
             continue
         cleaned[cleaned_key] = value
     return cleaned
+
+
+def normalize_trace_refs(trace_refs: Optional[List[Any]], *, session_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    normalized: List[Dict[str, Any]] = []
+    for item in trace_refs or []:
+        if not isinstance(item, dict):
+            continue
+        normalized.append(
+            {
+                "session_id": item.get("session_id") or session_id,
+                "event_seq": item.get("event_seq"),
+                "candidate_id": item.get("candidate_id"),
+                "artifact_id": item.get("artifact_id"),
+                "source_location": collapse_whitespace(str(item.get("source_location") or "")).strip() or None,
+            }
+        )
+    return normalized
+
+
+def normalize_artifact_refs(artifact_refs: Optional[List[Any]]) -> List[Dict[str, Any]]:
+    normalized: List[Dict[str, Any]] = []
+    for item in artifact_refs or []:
+        if isinstance(item, dict):
+            artifact_id = item.get("artifact_id")
+            if artifact_id:
+                normalized.append({"artifact_id": str(artifact_id), "label": item.get("label")})
+        elif item:
+            normalized.append({"artifact_id": str(item), "label": None})
+    return normalized
+
+
+def normalize_memory_level(memory_level: Optional[str], memory_type: str) -> str:
+    if memory_level:
+        value = collapse_whitespace(memory_level).upper()
+        if value in MEMORY_LEVELS:
+            return value
+    if memory_type in ("decision", "rule", "fact", "lesson"):
+        return "L1"
+    if memory_type in ("scenario", "workflow"):
+        return "L2"
+    return "L1"
 
 
 def normalize_rejected(rejected: Optional[List[Any]]) -> List[str]:
@@ -141,6 +182,9 @@ class NormalizedMemoryProposal:
     metadata: Dict[str, Any]
     relation_hint: Optional[str]
     content_hash: str
+    trace_refs: List[Dict[str, Any]]
+    artifact_refs: List[Dict[str, Any]]
+    memory_level: str
 
 
 @dataclass(frozen=True)
@@ -183,6 +227,9 @@ class MemoryQualityService:
         rejected: Optional[List[Any]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         relation_hint: Optional[str] = None,
+        trace_refs: Optional[List[Any]] = None,
+        artifact_refs: Optional[List[Any]] = None,
+        memory_level: Optional[str] = None,
     ) -> NormalizedMemoryProposal:
         normalized_type = collapse_whitespace(type).lower()
         normalized_title = normalize_title(title)
@@ -191,9 +238,12 @@ class MemoryQualityService:
         normalized_tags = normalize_tags(tags)
         normalized_rejected = normalize_rejected(rejected)
         normalized_metadata = normalize_metadata(metadata)
+        normalized_trace_refs = normalize_trace_refs(trace_refs, session_id=session_id)
+        normalized_artifact_refs = normalize_artifact_refs(artifact_refs)
         hint = collapse_whitespace(relation_hint).lower() if relation_hint else None
         if hint and hint not in SUPPORTED_RELATION_HINTS:
             hint = None
+        normalized_level = normalize_memory_level(memory_level, normalized_type)
         summary = summarize_content(normalized_content)
         return NormalizedMemoryProposal(
             proposed_by=collapse_whitespace(proposed_by),
@@ -208,6 +258,9 @@ class MemoryQualityService:
             metadata=normalized_metadata,
             relation_hint=hint,
             content_hash=content_hash(normalized_type, normalized_title, normalized_content),
+            trace_refs=normalized_trace_refs,
+            artifact_refs=normalized_artifact_refs,
+            memory_level=normalized_level,
         )
 
     def list_relevant_candidates(self, proposal: NormalizedMemoryProposal) -> List[MemoryCandidateRecord]:
@@ -281,6 +334,9 @@ class MemoryQualityService:
         metadata: Optional[Dict[str, Any]] = None,
         relation_hint: Optional[str] = None,
         candidate_id: Optional[str] = None,
+        trace_refs: Optional[List[Any]] = None,
+        artifact_refs: Optional[List[Any]] = None,
+        memory_level: Optional[str] = None,
     ) -> MemoryProposalResult:
         proposal = self.normalize_proposal(
             proposed_by=proposed_by,
@@ -293,7 +349,12 @@ class MemoryQualityService:
             rejected=rejected,
             metadata=metadata,
             relation_hint=relation_hint,
+            trace_refs=trace_refs,
+            artifact_refs=artifact_refs,
+            memory_level=memory_level,
         )
+        if proposal.memory_level == "L3" and not proposal.trace_refs:
+            raise ValueError("L3 canonical memory requires trace_refs from L1 or L2 evidence")
 
         candidates = self.list_relevant_candidates(proposal)
         exact_duplicate = self.find_exact_duplicate(proposal, candidates)
@@ -374,14 +435,85 @@ class MemoryQualityService:
                 event_type=event_type,
                 content={
                     "candidate_id": candidate_id,
+                    "node_id": resolved.node_id,
                     "status": resolved.status,
                     "previous_status": candidate.status,
                     "recommended_action": resolved.recommended_action,
                     "conflicts_with": candidate.conflicts_with,
                 },
+                trace_refs=resolved.trace_refs,
+                artifact_refs=resolved.artifact_refs,
                 metadata={"source": "memory_quality", **normalize_metadata(metadata)},
             )
+        if resolved.status in ("superseded", "rejected", "corrected"):
+            self._record_rejected_knowledge(
+                candidate=candidate,
+                resolved=resolved,
+                actor=collapse_whitespace(actor),
+                runtime=runtime,
+                mode=mode,
+                metadata=metadata,
+            )
         return resolved
+
+    def promote_candidate(
+        self,
+        candidate_id: str,
+        *,
+        target_level: str,
+        actor: str,
+        runtime: Optional[str] = None,
+        mode: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> MemoryCandidateRecord:
+        candidate = self.storage.get_memory_candidate(candidate_id)
+        normalized_target = normalize_memory_level(target_level, candidate.type)
+        if normalized_target != "L3":
+            raise ValueError("only promotion to L3 is supported in this phase")
+        if candidate.memory_level not in ("L1", "L2"):
+            raise ValueError("only L1 or L2 memory can be promoted to L3")
+        if candidate.status != "active":
+            raise ValueError("only active memory can be promoted to L3")
+        if not candidate.trace_refs:
+            raise ValueError("canonical promotion requires trace_refs")
+
+        promoted = self.storage.update_memory_candidate(
+            candidate_id,
+            memory_level="L3",
+            decision_status="accepted",
+        )
+        self.storage.append_audit_log(
+            actor=collapse_whitespace(actor),
+            action="memory_candidate_promote",
+            resource_type="memory_candidate",
+            resource_id=candidate_id,
+            metadata=normalize_metadata(
+                {
+                    "from_level": candidate.memory_level,
+                    "to_level": "L3",
+                    "runtime": runtime,
+                    "mode": mode,
+                    **(metadata or {}),
+                }
+            ),
+        )
+        if self.event_log is not None and promoted.session_id:
+            self.event_log.append_event(
+                session_id=promoted.session_id,
+                agent_id=collapse_whitespace(actor),
+                runtime=runtime,
+                mode=mode,
+                event_type="memory_promoted",
+                content={
+                    "candidate_id": promoted.candidate_id,
+                    "node_id": promoted.node_id,
+                    "memory_level": promoted.memory_level,
+                },
+                trace_refs=promoted.trace_refs,
+                artifact_refs=promoted.artifact_refs,
+                metadata={"source": "memory_quality", **normalize_metadata(metadata)},
+            )
+        return promoted
 
     def _persist_merged_result(
         self,
@@ -405,6 +537,11 @@ class MemoryQualityService:
             similar_to=[canonical.candidate_id],
             conflicts_with=[],
             recommended_action="merge",
+            node_id="memory-node-{}".format(candidate_id or uuid4().hex[:8]),
+            trace_refs=proposal.trace_refs or canonical.trace_refs,
+            artifact_refs=proposal.artifact_refs,
+            memory_level=proposal.memory_level,
+            decision_status="accepted",
             resolved_at=utc_now(),
         )
         self.storage.record_memory_occurrence(
@@ -441,10 +578,13 @@ class MemoryQualityService:
             event_type="memory_merged",
             content={
                 "candidate_id": created.candidate_id,
+                "node_id": created.node_id,
                 "duplicate_of": canonical.candidate_id,
                 "action": "merge",
                 "confidence": round(confidence, 3),
             },
+            trace_refs=created.trace_refs,
+            artifact_refs=created.artifact_refs,
         )
         return MemoryProposalResult(
             candidate=created,
@@ -484,6 +624,11 @@ class MemoryQualityService:
             similar_to=similar_to,
             conflicts_with=conflicts_with,
             recommended_action=action,
+            node_id="memory-node-{}".format(candidate_id or uuid4().hex[:8]),
+            trace_refs=proposal.trace_refs,
+            artifact_refs=proposal.artifact_refs,
+            memory_level=proposal.memory_level,
+            decision_status="candidate",
         )
         self.storage.record_memory_occurrence(
             memory_id=created.candidate_id,
@@ -522,11 +667,14 @@ class MemoryQualityService:
             event_type="memory_review_required",
             content={
                 "candidate_id": created.candidate_id,
+                "node_id": created.node_id,
                 "action": action,
                 "similar_to": similar_to,
                 "conflicts_with": conflicts_with,
                 "confidence": round(confidence, 3),
             },
+            trace_refs=created.trace_refs,
+            artifact_refs=created.artifact_refs,
         )
         return MemoryProposalResult(
             candidate=created,
@@ -560,6 +708,11 @@ class MemoryQualityService:
             similar_to=[],
             conflicts_with=[],
             recommended_action=proposal.relation_hint or "create_new",
+            node_id="memory-node-{}".format(candidate_id or uuid4().hex[:8]),
+            trace_refs=proposal.trace_refs,
+            artifact_refs=proposal.artifact_refs,
+            memory_level=proposal.memory_level,
+            decision_status="candidate",
         )
         self.storage.record_memory_occurrence(
             memory_id=created.candidate_id,
@@ -595,9 +748,12 @@ class MemoryQualityService:
             event_type="memory_proposed",
             content={
                 "candidate_id": created.candidate_id,
+                "node_id": created.node_id,
                 "action": proposal.relation_hint or "create_new",
                 "confidence": 0.72,
             },
+            trace_refs=created.trace_refs,
+            artifact_refs=created.artifact_refs,
         )
         return MemoryProposalResult(
             candidate=created,
@@ -651,6 +807,8 @@ class MemoryQualityService:
         runtime: Optional[str],
         event_type: str,
         content: Dict[str, Any],
+        trace_refs: Optional[List[Any]] = None,
+        artifact_refs: Optional[List[Any]] = None,
     ) -> None:
         if self.event_log is None or not session_id:
             return
@@ -660,5 +818,73 @@ class MemoryQualityService:
             runtime=runtime,
             event_type=event_type,
             content=content,
+            trace_refs=trace_refs,
+            artifact_refs=artifact_refs,
             metadata={"source": "memory_quality"},
         )
+
+    def _record_rejected_knowledge(
+        self,
+        *,
+        candidate: MemoryCandidateRecord,
+        resolved: MemoryCandidateRecord,
+        actor: str,
+        runtime: Optional[str],
+        mode: Optional[str],
+        metadata: Optional[Dict[str, Any]],
+    ) -> None:
+        reason = ""
+        if metadata and metadata.get("reason"):
+            reason = collapse_whitespace(str(metadata["reason"]))
+        if not reason:
+            reason = resolved.recommended_action or resolved.status
+        accepted_candidate_id = None
+        if metadata and metadata.get("accepted_candidate_id"):
+            accepted_candidate_id = str(metadata["accepted_candidate_id"])
+        elif candidate.conflicts_with:
+            accepted_candidate_id = str(candidate.conflicts_with[0])
+
+        rejected = self.storage.create_rejected_knowledge(
+            rejected_id="reject-{}".format(uuid4().hex[:12]),
+            session_id=resolved.session_id,
+            candidate_id=resolved.candidate_id,
+            accepted_candidate_id=accepted_candidate_id,
+            decision_type=resolved.type,
+            reason=reason,
+            trace_refs=resolved.trace_refs or candidate.trace_refs,
+            artifact_refs=resolved.artifact_refs or candidate.artifact_refs,
+            metadata=normalize_metadata(
+                {
+                    "previous_status": candidate.status,
+                    "status": resolved.status,
+                    "recommended_action": resolved.recommended_action,
+                    "runtime": runtime,
+                    "mode": mode,
+                    **(metadata or {}),
+                }
+            ),
+        )
+        self.storage.append_audit_log(
+            actor=actor,
+            action="rejected_knowledge_recorded",
+            resource_type="rejected_knowledge",
+            resource_id=rejected.rejected_id,
+            metadata={"candidate_id": resolved.candidate_id},
+        )
+        if self.event_log is not None and resolved.session_id:
+            self.event_log.append_event(
+                session_id=resolved.session_id,
+                agent_id=actor,
+                runtime=runtime,
+                mode=mode,
+                event_type="rejected_knowledge_recorded",
+                content={
+                    "candidate_id": resolved.candidate_id,
+                    "rejected_id": rejected.rejected_id,
+                    "accepted_candidate_id": accepted_candidate_id,
+                    "reason": reason,
+                },
+                trace_refs=rejected.trace_refs,
+                artifact_refs=rejected.artifact_refs,
+                metadata={"source": "memory_quality"},
+            )

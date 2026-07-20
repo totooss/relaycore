@@ -54,6 +54,9 @@ class AgentEventRecord:
     content: JsonDict
     command_id: Optional[str]
     parent_seq: Optional[int]
+    node_id: str
+    trace_refs: JsonList
+    artifact_refs: JsonList
     metadata: JsonDict
     created_at: str
 
@@ -82,6 +85,10 @@ class SessionDigestRecord:
     decisions: JsonList
     open_questions: JsonList
     rejected_candidates: JsonList
+    node_id: str
+    trace_refs: JsonList
+    artifact_refs: JsonList
+    task_canvas: str
     created_at: str
 
 
@@ -101,6 +108,11 @@ class MemoryCandidateRecord:
     similar_to: JsonList
     conflicts_with: JsonList
     recommended_action: str
+    node_id: str
+    trace_refs: JsonList
+    artifact_refs: JsonList
+    memory_level: str
+    decision_status: str
     created_at: str
     resolved_at: Optional[str]
 
@@ -126,6 +138,35 @@ class MemoryClusterRecord:
     quality_score: float
     updated_at: str
     metadata: JsonDict
+
+
+@dataclass(frozen=True)
+class ArtifactRecord:
+    artifact_id: str
+    session_id: Optional[str]
+    agent_id: Optional[str]
+    kind: str
+    path: str
+    sha256: str
+    size_bytes: int
+    summary: str
+    trace_refs: JsonList
+    metadata: JsonDict
+    created_at: str
+
+
+@dataclass(frozen=True)
+class RejectedKnowledgeRecord:
+    rejected_id: str
+    session_id: Optional[str]
+    candidate_id: str
+    accepted_candidate_id: Optional[str]
+    decision_type: str
+    reason: str
+    trace_refs: JsonList
+    artifact_refs: JsonList
+    metadata: JsonDict
+    created_at: str
 
 
 @dataclass(frozen=True)

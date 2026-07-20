@@ -285,3 +285,54 @@ def test_agent_heartbeat_updates_shared_agent_state(server: RelayCoreMCPServer) 
     )
     assert heartbeat["agent_state"]["agent_id"] == "claude-reviewer"
     assert heartbeat["agent_state"]["status"] == "busy"
+
+
+def test_trace_lookup_and_memory_promotion_tools(server: RelayCoreMCPServer) -> None:
+    server.call_tool(
+        "memory_begin_task",
+        {"session_id": "session-trace", "runtime": "codex", "agent_id": "codex-runner"},
+    )
+    event = server.storage.append_event(
+        session_id="session-trace",
+        agent_id="codex-runner",
+        event_type="decision_note",
+        content={"summary": "Use SQLite."},
+    )
+    added = server.call_tool(
+        "memory_add",
+        {
+            "session_id": "session-trace",
+            "runtime": "codex",
+            "agent_id": "codex-runner",
+            "type": "decision",
+            "title": "Primary Store",
+            "content": "Use SQLite as the shared control-plane store.",
+            "trace_refs": [{"session_id": "session-trace", "event_seq": event.seq, "source_location": "tests"}],
+        },
+    )
+    promoted = server.call_tool(
+        "memory_promote",
+        {
+            "candidate_id": added["candidate"]["candidate_id"],
+            "runtime": "codex",
+            "actor": "codex-runner",
+        },
+    )
+    evidence = server.call_tool(
+        "memory_evidence",
+        {
+            "candidate_id": added["candidate"]["candidate_id"],
+            "runtime": "codex",
+        },
+    )
+    trace = server.call_tool(
+        "trace_lookup",
+        {
+            "candidate_id": added["candidate"]["candidate_id"],
+            "runtime": "codex",
+        },
+    )
+
+    assert promoted["candidate"]["memory_level"] == "L3"
+    assert evidence["trace"]["events"][0]["seq"] == event.seq
+    assert trace["trace_refs"][0]["event_seq"] == event.seq

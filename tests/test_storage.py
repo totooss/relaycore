@@ -1,5 +1,6 @@
 from pathlib import Path
 import sys
+from threading import Thread
 
 import pytest
 
@@ -178,6 +179,55 @@ def test_memory_candidate_occurrence_cluster_and_audit_flows(storage: RelayCoreS
     assert storage.list_audit_logs(resource_type="memory_candidate")[0].metadata["cluster"] == "cluster-1"
 
 
+def test_traceable_records_and_rejected_knowledge_are_persisted(storage: RelayCoreStorage) -> None:
+    create_session(storage)
+    event = storage.append_event(
+        session_id="session-1",
+        agent_id="codex",
+        event_type="decision_note",
+        content={"summary": "Use SQLite."},
+    )
+    candidate = storage.create_memory_candidate(
+        candidate_id="mem-trace-1",
+        proposed_by="codex",
+        runtime="codex",
+        session_id="session-1",
+        type="decision",
+        title="Traceable Decision",
+        content="Use SQLite with evidence.",
+        status="active",
+        trace_refs=[{"session_id": "session-1", "event_seq": event.seq, "source_location": "tests"}],
+        artifact_refs=[{"artifact_id": "artifact-1"}],
+        memory_level="L2",
+    )
+    digest = storage.create_session_digest(
+        digest_id="digest-trace-1",
+        session_id="session-1",
+        from_seq=event.seq,
+        to_seq=event.seq,
+        summary="Structured digest",
+        decisions=[{"candidate_id": candidate.candidate_id}],
+        trace_refs=candidate.trace_refs,
+        artifact_refs=candidate.artifact_refs,
+        task_canvas='graph TD\nA["decision_note #1"]',
+    )
+    rejected = storage.create_rejected_knowledge(
+        rejected_id="reject-1",
+        session_id="session-1",
+        candidate_id=candidate.candidate_id,
+        accepted_candidate_id="mem-accepted",
+        decision_type="decision",
+        reason="Superseded by accepted option.",
+        trace_refs=candidate.trace_refs,
+        artifact_refs=candidate.artifact_refs,
+    )
+
+    assert storage.get_event(event.seq).trace_refs[0]["event_seq"] == event.seq
+    assert storage.get_memory_candidate(candidate.candidate_id).memory_level == "L2"
+    assert storage.get_session_digest(digest.digest_id).task_canvas.startswith("graph TD")
+    assert storage.list_rejected_knowledge(candidate_id=candidate.candidate_id)[0].reason.startswith("Superseded")
+
+
 def test_invalid_memory_candidate_status_is_rejected(storage: RelayCoreStorage) -> None:
     create_session(storage)
 
@@ -190,3 +240,18 @@ def test_invalid_memory_candidate_status_is_rejected(storage: RelayCoreStorage) 
             content="Bad status",
             status="unknown",
         )
+
+
+def test_storage_connection_can_serve_reads_from_another_thread(storage: RelayCoreStorage) -> None:
+    create_session(storage)
+
+    result = {}
+
+    def read_sessions() -> None:
+        result["count"] = len(storage.list_sessions())
+
+    thread = Thread(target=read_sessions)
+    thread.start()
+    thread.join()
+
+    assert result["count"] == 1
