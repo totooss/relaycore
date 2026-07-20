@@ -136,7 +136,7 @@ relaycore mcp-http
 - `tests/`：自动化测试
 - `examples/`：公开可用配置示例
 - `docs/ROADMAP.md`：后续规划
-- `docs/GITHUB_RELEASE_v1.0.md`：当前 release 文案
+- `docs/GITHUB_RELEASE_v1.1.0.md`：当前 release 文案
 
 ## 测试
 
