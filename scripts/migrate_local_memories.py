@@ -12,6 +12,7 @@ from typing import Dict, Iterable, List, Sequence
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from relaycore.mcp_server import RelayCoreMCPServer
+from relaycore.single_db import SingleDBConstraintError, enforce_single_runtime_db
 from relaycore.storage import RelayCoreStorage
 from relaycore.token_budget import SENSITIVE_VALUE_RE, TOKEN_REDACTION, redact_text
 
@@ -547,16 +548,20 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = build_parser().parse_args()
-    report = migrate(
-        db_path=Path(args.db).expanduser(),
-        session_id=args.session_id,
-        home_dir=Path(args.home).expanduser(),
-        dry_run=args.dry_run,
-        options=MigrationOptions(
-            include_history=args.include_history,
-            include_runtime_store=args.include_runtime_store,
-        ),
-    )
+    try:
+        report = migrate(
+            db_path=enforce_single_runtime_db(Path(args.db).expanduser()),
+            session_id=args.session_id,
+            home_dir=Path(args.home).expanduser(),
+            dry_run=args.dry_run,
+            options=MigrationOptions(
+                include_history=args.include_history,
+                include_runtime_store=args.include_runtime_store,
+            ),
+        )
+    except SingleDBConstraintError as error:
+        print(str(error))
+        return 2
     if args.report:
         write_report(report, Path(args.report).expanduser())
     print_report(report)

@@ -102,6 +102,17 @@ url = "http://127.0.0.1:9090/mcp"
 
 ## 迁移历史记忆
 
+本地运行现在采用单库约束：
+
+- 正式运行库只认 `relaycore.db`
+- 如果历史记忆还在旧的 `echomemory.db`，先做整库并入，再启动服务
+
+整合旧库到正式库：
+
+```bash
+relaycore consolidate-db --source echomemory.db --target relaycore.db
+```
+
 只预览、不写库：
 
 ```bash
@@ -127,6 +138,7 @@ relaycore init-db
 relaycore serve
 relaycore export
 relaycore mcp-http
+relaycore consolidate-db
 ```
 
 ## 仓库内容
@@ -135,8 +147,24 @@ relaycore mcp-http
 - `scripts/`：迁移与辅助脚本
 - `tests/`：自动化测试
 - `examples/`：公开可用配置示例
+- `AGENTS.md` / `CLAUDE.md`：项目级 runtime memory 约束
 - `docs/ROADMAP.md`：后续规划
 - `docs/GITHUB_RELEASE_v1.1.0.md`：当前 release 文案
+
+## 项目级 Memory 约束
+
+如果你希望 Codex、Claude 等 runtime 对这个项目统一走 RelayCore 而不是依赖各自内建 memory，请把下面两份文件作为项目级约束入口：
+
+- `AGENTS.md`
+- `CLAUDE.md`
+
+核心原则：
+
+- durable project memory 只认 RelayCore
+- built-in memory 不作为项目记忆源
+- 开始任务先 `memory_begin_task`
+- 读取上下文先 `memory_context`
+- 结束任务前 `memory_commit_task`
 
 ## 测试
 
@@ -144,7 +172,7 @@ relaycore mcp-http
 pytest
 ```
 
-当前本地测试结果（2026-07-19）：`55 passed`
+当前本地测试结果（2026-07-22）：`64 passed`
 
 ## 致谢
 
@@ -192,6 +220,6 @@ For Codex, merge the example from `examples/codex/config.toml.example` into `~/.
 ## Validation
 
 - `pytest`
-- Local status on July 19, 2026: `55 passed`
+- Local status on July 22, 2026: `64 passed`
 
 </details>

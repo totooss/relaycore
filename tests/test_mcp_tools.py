@@ -77,9 +77,11 @@ def test_memory_begin_context_and_commit_flow(server: RelayCoreMCPServer) -> Non
             "runtime": "claude",
             "agent_id": "claude-reviewer",
             "summary": "Committed current task state.",
+            "metadata": {"commit_note": "captured"},
         },
     )
     assert committed["session_id"] == "session-1"
+    assert server.storage.get_session("session-1").metadata["commit_note"] == "captured"
 
 
 def test_memory_propose_preserves_conflicts_and_rejected_options(server: RelayCoreMCPServer) -> None:

@@ -1,3 +1,4 @@
+from html import unescape
 from pathlib import Path
 import sys
 
@@ -29,7 +30,32 @@ def build_client(tmp_path: Path):
         tags=["storage"],
         status="active",
         trace_refs=[{"session_id": "session-1", "event_seq": 1, "source_location": "tests"}],
+        memory_level="L3",
+    )
+    storage.upsert_memory_cluster(
+        cluster_id="cluster-candidate-decision-1",
+        canonical_memory_id="candidate-decision-1",
+        summary="Primary database cluster",
+        tags=["storage"],
+        source_count=2,
+        quality_score=0.91,
+        metadata={"source": "test"},
+    )
+    storage.create_memory_candidate(
+        candidate_id="candidate-merged-1",
+        proposed_by="claude-agent",
+        runtime="claude",
+        session_id="session-1",
+        type="decision",
+        title="Primary Database",
+        content="Use SQLite for the MVP.",
+        summary="Duplicate of Primary Database.",
+        tags=["storage"],
+        status="merged",
+        similar_to=["candidate-decision-1"],
+        recommended_action="merge",
         memory_level="L1",
+        decision_status="accepted",
     )
     storage.append_event(
         session_id="session-1",
@@ -111,9 +137,16 @@ def test_mission_control_dashboard_renders_sections(tmp_path: Path) -> None:
         assert response.status_code == 200
         assert response.mimetype == "text/html"
         assert "RelayCore Mission Control" in body
-        assert "Command Publisher" in body
-        assert "Collaboration Modes" in body
-        assert "Quick Publish adversarial" in body
+        assert "Manual Dispatch" in body
+        assert "Agents normally publish commands themselves." in body
+        assert "How to use it" in body
+        assert "Choose a dispatch template to prefill the command shape." in body
+        assert "Dispatch Template" in body
+        assert "Usually the agent runtime you want to reach" in body
+        assert "Example payload" in body
+        assert "Create Dispatch" in body
+        assert "Collaboration Modes" not in body
+        assert "Quick Publish adversarial" not in body
         assert "Memory Candidate Queue" in body
         assert "Mermaid Task Canvas" in body
         assert "Trace Inspector" in body
@@ -204,18 +237,46 @@ def test_memory_viewer_renders_memory_entries_and_filters(tmp_path: Path) -> Non
     try:
         response = client.get("/mission-control/memories", query_string={"session_id": "session-1"})
         body = response.data.decode("utf-8")
+        visible = unescape(body)
 
         assert response.status_code == 200
         assert response.mimetype == "text/html"
-        assert "RelayCore Memory Viewer" in body
-        assert "Primary Database" in body
-        assert "Use SQLite for the MVP." in body
-        assert "Status Filters" in body
-        assert "Type Filters" in body
-        assert "Search Memory" in body
-        assert "All Sessions" in body
-        assert "Full Content" in body
-        assert "Structured Metadata" in body
+        assert "RelayCore Memory Viewer" in visible
+        assert "How to Read This Page" in visible
+        assert "Start with Deposited Memory" in visible
+        assert "Deposited Memory" in visible
+        assert "Review Queue" in visible
+        assert "Merged / Duplicate Records" in visible
+        assert "Dedup & Refinement" in visible
+        assert "Exact duplicates collapse into merged records" in visible
+        assert "Merged Duplicates" in visible
+        assert "Primary Database" in visible
+        assert "Current role" in visible
+        assert "Canonical accepted memory that is ready to reuse." in visible
+        assert "Merged into" in visible
+        assert "cluster-candidate-decision-1" in visible
+        assert "Use SQLite for the MVP." in visible
+        assert "Status Filters" in visible
+        assert "Type Filters" in visible
+        assert "Search Memory" in visible
+        assert "All Sessions" in visible
+        assert "Full Content" in visible
+        assert "Structured Metadata" in visible
+    finally:
+        storage.close()
+
+
+def test_memory_viewer_defaults_to_all_sessions_scope(tmp_path: Path) -> None:
+    client, storage = build_client(tmp_path)
+    try:
+        response = client.get("/mission-control/memories")
+        body = response.data.decode("utf-8")
+        visible = unescape(body)
+
+        assert response.status_code == 200
+        assert "All Sessions" in visible
+        assert "View every memory entry currently stored." in visible
+        assert "session_id=session-1" not in body.split("<form", 1)[1]
     finally:
         storage.close()
 
@@ -248,7 +309,12 @@ def test_dashboard_supports_chinese_language_toggle(tmp_path: Path) -> None:
         assert "RelayCore 控制台" in body
         assert "控制台" in body
         assert "记忆浏览" in body
-        assert "命令发布" in body
+        assert "人工介入" in body
+        assert "使用方法" in body
+        assert "先选一个调度模板" in body
+        assert "分发模板" in body
+        assert "载荷示例" in body
+        assert "创建调度" in body
         assert "追溯检查器" in body
         assert 'name="lang" value="zh"' in body
     finally:
@@ -267,6 +333,10 @@ def test_memory_viewer_supports_chinese_language_toggle(tmp_path: Path) -> None:
         assert response.status_code == 200
         assert 'lang="zh"' in body
         assert "RelayCore 记忆浏览" in body
+        assert "如何阅读此页" in body
+        assert "先看已沉淀记忆" in body
+        assert "已沉淀记忆" in body
+        assert "去重与精炼" in body
         assert "状态筛选" in body
         assert "类型筛选" in body
         assert "搜索记忆" in body

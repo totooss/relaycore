@@ -6,7 +6,7 @@ from uuid import uuid4
 
 from .command_bus import CommandBusService, serialize_command
 from .event_log import EventLogService, serialize_digest, serialize_event
-from .memory_quality import MemoryQualityService, combined_similarity, summarize_content
+from .memory_quality import MemoryQualityService, combined_similarity, normalize_metadata, summarize_content
 from .runtime_adapters import RuntimeAdapterRegistry
 from .storage import RelayCoreStorage, utc_now
 from .token_budget import estimate_tokens, redact_structure
@@ -114,7 +114,11 @@ class RelayCoreMCPServer:
             MCPToolDefinition(
                 name="memory_commit_task",
                 description="Commit a task summary and create a digest for uncommitted events.",
-                input_schema={"type": "object", "required": ["session_id", "runtime"]},
+                input_schema={
+                    "type": "object",
+                    "required": ["session_id", "runtime"],
+                    "properties": {"metadata": {"type": "object"}},
+                },
             ),
             MCPToolDefinition(
                 name="command_poll",
@@ -512,8 +516,10 @@ class RelayCoreMCPServer:
         decisions: Optional[List[Any]] = None,
         open_questions: Optional[List[Any]] = None,
         rejected_candidates: Optional[List[Any]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         context = self.adapters.normalize(runtime=runtime, agent_id=agent_id, session_id=session_id)
+        commit_metadata = normalize_metadata(metadata)
         latest = self.storage.get_latest_session_digest(session_id)
         next_from_seq = latest.to_seq + 1 if latest else 1
         events = self.storage.list_events_window(session_id, next_from_seq, limit=500)
@@ -536,7 +542,7 @@ class RelayCoreMCPServer:
             )
         self.storage.update_session(
             session_id,
-            metadata={"last_commit_at": utc_now(), "last_commit_runtime": context.runtime},
+            metadata={"last_commit_at": utc_now(), "last_commit_runtime": context.runtime, **commit_metadata},
         )
         self.event_log.append_event(
             session_id=session_id,
@@ -545,7 +551,7 @@ class RelayCoreMCPServer:
             mode=context.mode,
             event_type="task_commit",
             content={"summary": summary or "Task committed", "digest_created": digest is not None},
-            metadata={"source": "mcp"},
+            metadata={"source": "mcp", **commit_metadata},
         )
         return {
             "session_id": session_id,

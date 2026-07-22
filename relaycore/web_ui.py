@@ -41,12 +41,21 @@ UI_TEXT = {
         "session_detail_lead": "Current focus, command traffic, and live timeline for the selected task.",
         "session_overview_lead": "Task goal, current state, and knowledge posture for the selected session.",
         "no_session_selected": "No session selected",
-        "command_publisher": "Command Publisher",
-        "command_publisher_lead": "Publish a structured command with explicit routing and permission scope.",
-        "no_shell_execution": "No Shell Execution",
-        "collaboration_modes": "Collaboration Modes",
-        "collaboration_modes_lead": "Structured templates keep multi-agent coordination predictable and auditable.",
-        "templates_count": "{count} templates",
+        "manual_dispatch": "Manual Dispatch",
+        "manual_dispatch_lead": "Agents normally publish commands themselves. Use this panel only for operator override, debugging, or seeding a session.",
+        "manual_dispatch_steps_title": "How to use it",
+        "manual_dispatch_step_1": "Choose a dispatch template to prefill the command shape.",
+        "manual_dispatch_step_2": "Set the target runtime or agent, then keep the command type aligned with your intent.",
+        "manual_dispatch_step_3": "Edit the payload JSON and submit only when you want a human to intervene.",
+        "dispatch_template": "Dispatch Template",
+        "dispatch_template_help": "Pick a collaboration preset to prefill routing and payload defaults.",
+        "dispatch_template_hint": "This is only a preset; the command is still created manually from the page.",
+        "target_runtime_hint": "Usually the agent runtime you want to reach, such as codex or claude.",
+        "target_agent_hint": "Optional. Use it when the command should go to one specific agent.",
+        "command_type_hint": "Use a command type that matches the task, such as review_patch or assist_task.",
+        "payload_hint": "Keep the payload short and structured. Add only what the agent needs to act.",
+        "payload_example": "Example payload",
+        "no_shell_execution": "Operator Override",
         "live_count": "{count} live",
         "token_budget_monitor": "Token Budget Monitor",
         "est_count": "{count} est",
@@ -89,12 +98,15 @@ UI_TEXT = {
         "recent_digests": "Recent Digests",
         "compact_count": "{count} compact",
         "eyebrow_memory": "RelayCore Memory Viewer",
-        "memory_title": "View stored memory in one place.",
-        "memory_body": "Browse memory entries by session and status. This page is for inspection only, so you can directly review summaries, full content, tags, rejected options, and conflict markers.",
+        "memory_title": "Start with deposited memory, then inspect review items.",
+        "memory_body": "This page shows both reusable project memory and candidate records still going through review, deduplication, or conflict handling. Read deposited memory first; use the rest mainly for traceability and debugging.",
         "total_in_scope": "Total In Scope",
         "active": "Active",
         "pending": "Pending",
         "rejected": "Rejected",
+        "deposited_count": "Deposited",
+        "review_count": "Needs Review",
+        "merged_count": "Merged",
         "status_filters": "Status Filters",
         "type_filters": "Type Filters",
         "search_memory": "Search Memory",
@@ -114,7 +126,50 @@ UI_TEXT = {
         "all_statuses": "all statuses",
         "all_types": "all types",
         "no_search": "no search",
-        "memory_entries": "Memory Entries",
+        "memory_entries": "Memory Groups",
+        "memory_reading_guide": "How to Read This Page",
+        "memory_reading_guide_lead": "This is a memory results view, not a task console. Read it in this order.",
+        "guide_deposited_title": "1. Start with Deposited Memory",
+        "guide_deposited_body": "These are the accepted memories you should usually reuse first.",
+        "guide_review_title": "2. Then inspect Review Items",
+        "guide_review_body": "These are similar, conflicting, or unfinished items that should not be treated as final yet.",
+        "guide_merged_title": "3. Use Merged Records for verification only",
+        "guide_merged_body": "Merged records mainly prove deduplication happened. They usually are not new conclusions.",
+        "memory_refinement": "Dedup & Refinement",
+        "memory_refinement_lead": "The system does not keep every candidate as a separate reusable memory. This summary explains what was accepted, merged, or left in review.",
+        "accepted_active": "Accepted Active",
+        "merged_duplicates": "Merged Duplicates",
+        "needs_review": "Needs Review",
+        "canonical_clusters": "Canonical Clusters",
+        "refinement_rule_exact": "Exact duplicates collapse into merged records instead of creating another accepted memory.",
+        "refinement_rule_similarity": "Strong similarity stays in review or conflict state until someone resolves it.",
+        "refinement_rule_canonical": "Only evidence-backed active memory should be promoted to L3 canonical memory.",
+        "deposited_memory_section": "Deposited Memory",
+        "deposited_memory_lead": "These are the current accepted memories and the best place to start reading.",
+        "review_queue_section": "Review Queue",
+        "review_queue_lead": "These items still need judgment before they can be treated as reusable memory.",
+        "merged_records_section": "Merged / Duplicate Records",
+        "merged_records_lead": "These records exist mostly to show deduplication results, not new conclusions.",
+        "other_records_section": "Historical Records",
+        "other_records_lead": "These items are retained for traceability, but they are not the current preferred memory.",
+        "memory_role_label": "Current role",
+        "memory_summary_label": "Summary",
+        "memory_type_label": "Type",
+        "candidate_id_label": "Candidate ID",
+        "role_canonical_memory": "Canonical accepted memory that is ready to reuse.",
+        "role_accepted_memory": "Accepted memory that is ready to reuse.",
+        "role_pending_memory": "Still under review and not final yet.",
+        "role_merged_memory": "Merged into another memory and kept only as a deduplication record.",
+        "role_corrected_memory": "Corrected memory that remains usable after review.",
+        "role_superseded_memory": "Replaced by a newer memory and kept only for history.",
+        "role_rejected_memory": "Rejected memory kept only for comparison and reasoning.",
+        "role_archived_memory": "Archived memory kept mainly for traceability.",
+        "merged_into": "Merged into",
+        "review_with": "Review with",
+        "conflicts_with_label": "Conflicts with",
+        "cluster_label": "Cluster",
+        "sources_label": "Sources",
+        "quality_label": "Quality",
         "all_sessions_title": "All Sessions",
         "all_sessions_desc": "View every memory entry currently stored.",
         "all": "all",
@@ -140,8 +195,7 @@ UI_TEXT = {
         "idempotency_key": "Idempotency Key",
         "idempotency_placeholder": "optional-dedup-key",
         "structured_payload_json": "Structured Payload JSON",
-        "publish_structured_command": "Publish Structured Command",
-        "quick_publish": "Quick Publish {name}",
+        "publish_structured_command": "Create Dispatch",
         "no_heartbeats": "No heartbeats yet.",
         "heartbeats_desc": "Agents will appear here after `agent_heartbeat` or `memory_begin_task`.",
         "last_heartbeat": "last heartbeat {value}",
@@ -199,12 +253,21 @@ UI_TEXT = {
         "session_detail_lead": "查看当前任务焦点、命令流转和实时事件时间线。",
         "session_overview_lead": "查看所选会话的任务目标、当前状态和知识沉淀情况。",
         "no_session_selected": "未选择会话",
-        "command_publisher": "命令发布",
-        "command_publisher_lead": "以明确路由和权限范围发布结构化命令。",
-        "no_shell_execution": "不执行 Shell",
-        "collaboration_modes": "协作模式",
-        "collaboration_modes_lead": "结构化模板让多代理协作更稳定、更可审计。",
-        "templates_count": "共 {count} 个模板",
+        "manual_dispatch": "人工介入",
+        "manual_dispatch_lead": "代理通常会自行发布命令。只有在人工兜底、调试或为会话注入任务时才使用这里。",
+        "manual_dispatch_steps_title": "使用方法",
+        "manual_dispatch_step_1": "先选一个调度模板，自动填充命令外形。",
+        "manual_dispatch_step_2": "再设置目标运行时或目标代理，命令类型保持和任务一致。",
+        "manual_dispatch_step_3": "最后编辑 JSON 载荷，只在需要人工介入时提交。",
+        "dispatch_template": "分发模板",
+        "dispatch_template_help": "选择协作预设，可自动填充路由和载荷默认值。",
+        "dispatch_template_hint": "这里只是预设，真正的命令仍然需要你在页面里手动创建。",
+        "target_runtime_hint": "通常是要触达的代理运行时，例如 codex 或 claude。",
+        "target_agent_hint": "可选。仅在命令要发给某个具体代理时使用。",
+        "command_type_hint": "命令类型要和任务匹配，例如 review_patch 或 assist_task。",
+        "payload_hint": "载荷尽量短而结构化，只保留代理执行所需的信息。",
+        "payload_example": "载荷示例",
+        "no_shell_execution": "人工兜底",
         "live_count": "{count} 个在线",
         "token_budget_monitor": "Token 预算监视",
         "est_count": "估算 {count}",
@@ -247,12 +310,15 @@ UI_TEXT = {
         "recent_digests": "最近摘要",
         "compact_count": "共 {count} 条",
         "eyebrow_memory": "RelayCore 记忆浏览",
-        "memory_title": "集中查看已存储记忆。",
-        "memory_body": "按会话和状态浏览记忆条目。这个页面只用于查看，你可以直接审阅摘要、完整内容、标签、被拒选项和冲突标记。",
+        "memory_title": "先看已沉淀记忆，再看待审条目。",
+        "memory_body": "这个页面同时展示可复用的项目记忆，以及仍在审查、去重或冲突处理中的候选记录。默认先读“已沉淀记忆”，其余部分主要用于追溯和调试。",
         "total_in_scope": "当前范围总数",
         "active": "活跃",
         "pending": "待处理",
         "rejected": "已拒绝",
+        "deposited_count": "已沉淀",
+        "review_count": "待审",
+        "merged_count": "已合并",
         "status_filters": "状态筛选",
         "type_filters": "类型筛选",
         "search_memory": "搜索记忆",
@@ -272,7 +338,50 @@ UI_TEXT = {
         "all_statuses": "全部状态",
         "all_types": "全部类型",
         "no_search": "未搜索",
-        "memory_entries": "记忆条目",
+        "memory_entries": "记忆分组",
+        "memory_reading_guide": "如何阅读此页",
+        "memory_reading_guide_lead": "这不是任务控制台，而是记忆结果页。按下面顺序阅读会更快。",
+        "guide_deposited_title": "1. 先看已沉淀记忆",
+        "guide_deposited_body": "这里是当前已采纳、应优先复用的记忆。",
+        "guide_review_title": "2. 再看待审条目",
+        "guide_review_body": "这里是相似、冲突或还未定稿的内容，暂时不能当成最终结论。",
+        "guide_merged_title": "3. 合并记录只用于核对",
+        "guide_merged_body": "这里主要用来确认去重已经发生，通常不代表新的结论。",
+        "memory_refinement": "去重与精炼",
+        "memory_refinement_lead": "系统不会把每个候选都保留成一条可复用记忆。这里先解释哪些被采纳、哪些被合并、哪些仍待审查。",
+        "accepted_active": "已采纳",
+        "merged_duplicates": "已合并重复",
+        "needs_review": "待审查",
+        "canonical_clusters": "规范 Cluster",
+        "refinement_rule_exact": "完全重复的内容会折叠成 merged 记录，而不是再生成一条已采纳记忆。",
+        "refinement_rule_similarity": "高度相似的内容会停留在审查或冲突状态，直到有人处理。",
+        "refinement_rule_canonical": "只有带证据的 active 记忆才应该提升为 L3 规范记忆。",
+        "deposited_memory_section": "已沉淀记忆",
+        "deposited_memory_lead": "这些是当前已采纳、最值得先阅读的记忆。",
+        "review_queue_section": "待审条目",
+        "review_queue_lead": "这些内容还需要判断，暂时不能直接当成可复用记忆。",
+        "merged_records_section": "合并与重复记录",
+        "merged_records_lead": "这些记录主要用于说明去重结果，不代表新的记忆结论。",
+        "other_records_section": "历史记录",
+        "other_records_lead": "这些内容用于追溯历史状态，但不是当前优先结论。",
+        "memory_role_label": "当前角色",
+        "memory_summary_label": "摘要",
+        "memory_type_label": "类型",
+        "candidate_id_label": "候选 ID",
+        "role_canonical_memory": "这是已采纳的规范记忆，可作为当前优先复用的结论。",
+        "role_accepted_memory": "这是已采纳记忆，可直接复用。",
+        "role_pending_memory": "这条内容仍在审查中，暂时不是最终结论。",
+        "role_merged_memory": "这条内容已合并到其他记忆中，仅保留作去重记录。",
+        "role_corrected_memory": "这条记忆经过修正后继续保留，可继续参考。",
+        "role_superseded_memory": "这条记忆已被更新方案替代，仅保留历史记录。",
+        "role_rejected_memory": "这条内容已被拒绝，仅保留对照和原因。",
+        "role_archived_memory": "这条内容已归档，通常只在追溯时查看。",
+        "merged_into": "已合并到",
+        "review_with": "关联审查",
+        "conflicts_with_label": "冲突对象",
+        "cluster_label": "Cluster",
+        "sources_label": "来源数",
+        "quality_label": "质量",
         "all_sessions_title": "全部会话",
         "all_sessions_desc": "查看当前存储的全部记忆条目。",
         "all": "全部",
@@ -298,8 +407,7 @@ UI_TEXT = {
         "idempotency_key": "幂等键",
         "idempotency_placeholder": "可选去重键",
         "structured_payload_json": "结构化载荷 JSON",
-        "publish_structured_command": "发布结构化命令",
-        "quick_publish": "快速发布 {name}",
+        "publish_structured_command": "创建调度",
         "no_heartbeats": "还没有心跳。",
         "heartbeats_desc": "调用 `agent_heartbeat` 或 `memory_begin_task` 后，这里会出现代理状态。",
         "last_heartbeat": "最近心跳 {value}",
@@ -619,6 +727,25 @@ class MissionControlUI:
       margin: 0 0 16px;
       color: rgba(31,27,23,0.68);
     }}
+    .dispatch-guide {{
+      display: grid;
+      gap: 12px;
+      padding: 14px 16px;
+      border: 1px solid rgba(31,27,23,0.08);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.66);
+      margin-bottom: 16px;
+    }}
+    .dispatch-steps {{
+      margin: 0;
+      padding-left: 20px;
+      display: grid;
+      gap: 8px;
+      color: rgba(31,27,23,0.78);
+    }}
+    .dispatch-steps li {{
+      line-height: 1.45;
+    }}
     .session-list {{
       display: grid;
       gap: 10px;
@@ -764,6 +891,21 @@ class MissionControlUI:
       background: rgba(255,255,255,0.9);
       color: var(--ink);
     }}
+    .field-hint {{
+      display: block;
+      margin-top: 6px;
+      font-size: 12px;
+      line-height: 1.4;
+      color: rgba(31,27,23,0.58);
+    }}
+    .example-box {{
+      margin-top: 6px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(31,27,23,0.08);
+      background: rgba(255,255,255,0.7);
+      font-size: 12px;
+    }}
     textarea {{
       min-height: 112px;
       resize: vertical;
@@ -886,17 +1028,15 @@ class MissionControlUI:
             </div>
             <span class="badge warn">{no_shell_execution}</span>
           </div>
-          {command_form}
-        </section>
-        <section class="panel">
-          <div class="section-title">
-            <div>
-              <h2>{collaboration_modes_label}</h2>
-              <p class="lead">{collaboration_modes_lead}</p>
-            </div>
-            <span class="badge">{mode_templates_label}</span>
+          <div class="dispatch-guide">
+            <strong>{manual_dispatch_steps_title}</strong>
+            <ol class="dispatch-steps">
+              <li>{manual_dispatch_step_1}</li>
+              <li>{manual_dispatch_step_2}</li>
+              <li>{manual_dispatch_step_3}</li>
+            </ol>
           </div>
-          <div class="list">{mode_cards}</div>
+          {command_form}
         </section>
         <div class="two-up">
           <section class="panel">
@@ -1013,12 +1153,13 @@ class MissionControlUI:
             session_detail_lead=_esc(self._t(lang, "session_detail_lead")),
             session_overview_label=_esc(self._t(lang, "session_overview")),
             session_overview_lead=_esc(self._t(lang, "session_overview_lead")),
-            command_publisher_label=_esc(self._t(lang, "command_publisher")),
-            command_publisher_lead=_esc(self._t(lang, "command_publisher_lead")),
+            command_publisher_label=_esc(self._t(lang, "manual_dispatch")),
+            command_publisher_lead=_esc(self._t(lang, "manual_dispatch_lead")),
+            manual_dispatch_steps_title=_esc(self._t(lang, "manual_dispatch_steps_title")),
+            manual_dispatch_step_1=_esc(self._t(lang, "manual_dispatch_step_1")),
+            manual_dispatch_step_2=_esc(self._t(lang, "manual_dispatch_step_2")),
+            manual_dispatch_step_3=_esc(self._t(lang, "manual_dispatch_step_3")),
             no_shell_execution=_esc(self._t(lang, "no_shell_execution")),
-            collaboration_modes_label=_esc(self._t(lang, "collaboration_modes")),
-            collaboration_modes_lead=_esc(self._t(lang, "collaboration_modes_lead")),
-            mode_templates_label=_esc(self._t(lang, "templates_count", count=len(self.collaboration_modes.list()))),
             agent_states_label=_esc(self._t(lang, "agent_states")),
             agent_live_label=_esc(self._t(lang, "live_count", count=len(agent_states))),
             token_budget_label=_esc(self._t(lang, "token_budget_monitor")),
@@ -1062,7 +1203,6 @@ class MissionControlUI:
             commit_warning=commit_warning,
             session_detail=self._render_session_detail(selected_session, commands, events, lang),
             command_form=self._render_command_form(selected_id, lang),
-            mode_cards=self._render_mode_cards(selected_id, lang),
             agent_state_count=len(agent_states),
             agent_state_items=self._render_agent_states(agent_states, lang),
             token_estimate=_esc(token_snapshot["total"]),
@@ -1143,7 +1283,7 @@ class MissionControlUI:
     ) -> str:
         lang = self._normalize_lang(lang)
         sessions = self.storage.list_sessions()
-        selected_session = self._resolve_session(session_id, sessions)
+        selected_session = self._resolve_session(session_id, sessions) if session_id else None
         selected_id = selected_session.session_id if selected_session else None
         allowed_statuses = {
             "pending",
@@ -1182,6 +1322,11 @@ class MissionControlUI:
                 query=normalized_query,
             )
         )
+        scope_clusters = self._memory_clusters_for_candidates(session_scope)
+        cluster_map = {cluster.canonical_memory_id: cluster for cluster in scope_clusters}
+        deposited_count = len([candidate for candidate in session_scope if candidate.status in {"active", "corrected"}])
+        review_count = len([candidate for candidate in session_scope if candidate.status == "pending"])
+        merged_count = len([candidate for candidate in session_scope if candidate.status == "merged"])
 
         return """<!DOCTYPE html>
 <html lang="{page_lang}">
@@ -1374,6 +1519,66 @@ class MissionControlUI:
       background: rgba(255,255,255,0.72);
       padding: 14px;
     }}
+    .refinement-panel {{
+      border: 1px solid rgba(31,27,23,0.08);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.72);
+      padding: 14px;
+      margin-bottom: 18px;
+    }}
+    .reading-panel {{
+      border: 1px solid rgba(31,27,23,0.08);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.76);
+      padding: 16px;
+      margin-bottom: 18px;
+    }}
+    .guide-grid {{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }}
+    .guide-step {{
+      border: 1px solid rgba(31,27,23,0.08);
+      border-radius: 16px;
+      background: rgba(255,255,255,0.84);
+      padding: 14px;
+    }}
+    .guide-step strong {{
+      display: block;
+      margin-bottom: 6px;
+    }}
+    .guide-step p {{
+      margin: 0;
+      color: rgba(31,27,23,0.72);
+      line-height: 1.5;
+      font-size: 14px;
+    }}
+    .refinement-grid {{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin: 12px 0 14px;
+    }}
+    .refinement-metric {{
+      border: 1px solid rgba(31,27,23,0.08);
+      border-radius: 16px;
+      background: rgba(255,255,255,0.82);
+      padding: 12px;
+    }}
+    .refinement-metric strong {{
+      display: block;
+      font-size: 1.3rem;
+      margin-top: 4px;
+    }}
+    .refinement-rules {{
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 8px;
+      color: rgba(31,27,23,0.76);
+    }}
     .search-form {{
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
@@ -1458,12 +1663,79 @@ class MissionControlUI:
       overflow-x: auto;
       color: #3b332c;
     }}
+    .memory-sections {{
+      display: grid;
+      gap: 18px;
+    }}
+    .memory-section {{
+      border: 1px solid rgba(31,27,23,0.08);
+      border-radius: 20px;
+      background: rgba(255,255,255,0.62);
+      padding: 14px;
+    }}
+    .section-lead {{
+      margin: -6px 0 14px;
+      color: rgba(31,27,23,0.72);
+      line-height: 1.5;
+    }}
     .row {{
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
       align-items: center;
       margin-bottom: 10px;
+    }}
+    .memory-note {{
+      margin: 0 0 12px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(54,92,71,0.08);
+      color: rgba(31,27,23,0.82);
+      line-height: 1.5;
+    }}
+    .memory-facts {{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }}
+    .memory-fact {{
+      border: 1px solid rgba(31,27,23,0.08);
+      border-radius: 14px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.82);
+    }}
+    .memory-fact small {{
+      display: block;
+      color: rgba(31,27,23,0.56);
+      margin-bottom: 4px;
+    }}
+    .memory-fact strong {{
+      display: block;
+      overflow-wrap: anywhere;
+    }}
+    .memory-relationships {{
+      display: grid;
+      gap: 8px;
+      margin-bottom: 12px;
+    }}
+    .memory-linkage {{
+      padding: 9px 11px;
+      border-radius: 12px;
+      background: rgba(31,27,23,0.05);
+      color: rgba(31,27,23,0.72);
+      overflow-wrap: anywhere;
+    }}
+    .memory-summary-block small {{
+      display: block;
+      color: rgba(31,27,23,0.56);
+      margin-bottom: 4px;
+    }}
+    .memory-summary {{
+      margin: 0;
+      color: rgba(31,27,23,0.84);
+      line-height: 1.6;
+      overflow-wrap: anywhere;
     }}
     .badge {{
       display: inline-flex;
@@ -1537,9 +1809,9 @@ class MissionControlUI:
       <p class="lead">{memory_body}</p>
       <div class="metrics">
         <div class="metric"><small>{total_in_scope}</small><strong>{total_count}</strong></div>
-        <div class="metric"><small>{active_label}</small><strong>{active_count}</strong></div>
-        <div class="metric"><small>{pending_label}</small><strong>{pending_count}</strong></div>
-        <div class="metric"><small>{rejected_label}</small><strong>{rejected_count}</strong></div>
+        <div class="metric"><small>{deposited_label}</small><strong>{deposited_count}</strong></div>
+        <div class="metric"><small>{review_label}</small><strong>{review_count}</strong></div>
+        <div class="metric"><small>{merged_label}</small><strong>{merged_count}</strong></div>
       </div>
     </section>
     <div class="grid">
@@ -1579,8 +1851,22 @@ class MissionControlUI:
             </div>
           </section>
         </div>
+        <section class="reading-panel">
+          <div class="section-title"><h2>{memory_reading_guide_label}</h2><span class="badge">{memory_count_label}</span></div>
+          <p class="lead">{memory_reading_guide_lead}</p>
+          <div class="guide-grid">
+            <article class="guide-step"><strong>{guide_deposited_title}</strong><p>{guide_deposited_body}</p></article>
+            <article class="guide-step"><strong>{guide_review_title}</strong><p>{guide_review_body}</p></article>
+            <article class="guide-step"><strong>{guide_merged_title}</strong><p>{guide_merged_body}</p></article>
+          </div>
+        </section>
+        <section class="refinement-panel">
+          <div class="section-title"><h2>{memory_refinement_label}</h2><span class="badge">{canonical_cluster_count}</span></div>
+          <p class="lead">{memory_refinement_lead}</p>
+          {refinement_panel}
+        </section>
         <div class="section-title"><h2>{memory_entries_label}</h2><span class="badge">{memory_count_label}</span></div>
-        <div class="memory-list">{memory_items}</div>
+        <div class="memory-sections">{memory_items}</div>
       </main>
     </div>
   </div>
@@ -1602,13 +1888,13 @@ class MissionControlUI:
             memory_title=_esc(self._t(lang, "memory_title")),
             memory_body=_esc(self._t(lang, "memory_body")),
             total_in_scope=_esc(self._t(lang, "total_in_scope")),
-            active_label=_esc(self._t(lang, "active")),
-            pending_label=_esc(self._t(lang, "pending")),
-            rejected_label=_esc(self._t(lang, "rejected")),
             total_count=len(session_scope),
-            active_count=counts.get("active", 0),
-            pending_count=counts.get("pending", 0),
-            rejected_count=counts.get("rejected", 0),
+            deposited_label=_esc(self._t(lang, "deposited_count")),
+            deposited_count=deposited_count,
+            review_label=_esc(self._t(lang, "review_count")),
+            review_count=review_count,
+            merged_label=_esc(self._t(lang, "merged_count")),
+            merged_count=merged_count,
             session_count=len(sessions),
             sessions_label=_esc(self._t(lang, "sessions")),
             session_tracked_label=_esc(self._t(lang, "tracked_count", count=len(sessions))),
@@ -1643,10 +1929,22 @@ class MissionControlUI:
             scope_status_label=_esc(self._t(lang, "scope_status")),
             scope_type_label=_esc(self._t(lang, "scope_type")),
             scope_search_label=_esc(self._t(lang, "scope_search")),
+            memory_reading_guide_label=_esc(self._t(lang, "memory_reading_guide")),
+            memory_reading_guide_lead=_esc(self._t(lang, "memory_reading_guide_lead")),
+            guide_deposited_title=_esc(self._t(lang, "guide_deposited_title")),
+            guide_deposited_body=_esc(self._t(lang, "guide_deposited_body")),
+            guide_review_title=_esc(self._t(lang, "guide_review_title")),
+            guide_review_body=_esc(self._t(lang, "guide_review_body")),
+            guide_merged_title=_esc(self._t(lang, "guide_merged_title")),
+            guide_merged_body=_esc(self._t(lang, "guide_merged_body")),
+            memory_refinement_label=_esc(self._t(lang, "memory_refinement")),
+            memory_refinement_lead=_esc(self._t(lang, "memory_refinement_lead")),
+            canonical_cluster_count=_esc(self._t(lang, "canonical_clusters") + ": {}".format(len(scope_clusters))),
+            refinement_panel=self._render_memory_refinement_panel(session_scope, scope_clusters, lang),
             memory_entries_label=_esc(self._t(lang, "memory_entries")),
             memory_count_label=_esc(self._t(lang, "shown_count", count=len(candidates))),
             memory_count=len(candidates),
-            memory_items=self._render_memory_items(candidates, lang),
+            memory_items=self._render_memory_sections(candidates, cluster_map, lang),
         )
 
     def _resolve_session(self, session_id: Optional[str], sessions: List[Any]):
@@ -1814,23 +2112,27 @@ class MissionControlUI:
 
     def _render_command_form(self, selected_id: Optional[str], lang: str) -> str:
         options = "".join(
-            "<option value='{name}'>{name}</option>".format(name=_esc(template.name))
+            "<option value='{name}'>{label}</option>".format(
+                name=_esc(template.name),
+                label=_esc("{} - {}".format(template.name, template.summary)),
+            )
             for template in self.collaboration_modes.list()
         )
         return """
         <form method="post" action="/mission-control/commands">
           <input type="hidden" name="lang" value="{lang}">
+          <p class="muted">{dispatch_template_help}</p>
           <div class="two-up">
             <label>{session_id_label}<input name="session_id" value="{session_id}" required></label>
             <label>{created_by_label}<input name="created_by" value="mission-control" required></label>
           </div>
           <div class="three-up">
-            <label>{mode_label}<select name="mode">{options}</select></label>
-            <label>{target_runtime_label}<input name="target_runtime" value="codex"></label>
-            <label>{target_agent_label}<input name="target_agent" placeholder="{optional_label}"></label>
+            <label>{mode_label}<select name="mode">{options}</select><span class="field-hint">{mode_hint}</span></label>
+            <label>{target_runtime_label}<input name="target_runtime" value="codex"><span class="field-hint">{target_runtime_hint}</span></label>
+            <label>{target_agent_label}<input name="target_agent" placeholder="{optional_label}"><span class="field-hint">{target_agent_hint}</span></label>
           </div>
           <div class="three-up">
-            <label>{command_type_label}<input name="command_type" value="review_patch" required></label>
+            <label>{command_type_label}<input name="command_type" value="review_patch" required><span class="field-hint">{command_type_hint}</span></label>
             <label>{permission_level_label}
               <select name="permission_level">
                 <option value="L1">L1</option>
@@ -1841,74 +2143,35 @@ class MissionControlUI:
             <label>{priority_label}<input name="priority" type="number" value="100" min="1"></label>
           </div>
           <label>{idempotency_label}<input name="idempotency_key" placeholder="{idempotency_placeholder}"></label>
-          <label>{payload_label}<textarea name="payload">{{"summary":"Review current task state","paths":["app.py"]}}</textarea></label>
+          <label>{payload_label}<textarea name="payload">{{"summary":"Review current task state","paths":["app.py"]}}</textarea><span class="field-hint">{payload_hint}</span></label>
+          <div class="example-box"><strong>{payload_example_label}</strong><pre>{{"summary":"Review current task state","paths":["app.py"]}}</pre></div>
           <button type="submit">{publish_label}</button>
         </form>
         """.format(
             lang=_esc(lang),
+            dispatch_template_help=_esc(self._t(lang, "dispatch_template_help")),
             session_id_label=_esc(self._t(lang, "session_id")),
             created_by_label=_esc(self._t(lang, "created_by")),
-            mode_label=_esc(self._t(lang, "mode")),
+            mode_label=_esc(self._t(lang, "dispatch_template")),
+            mode_hint=_esc(self._t(lang, "dispatch_template_hint")),
             target_runtime_label=_esc(self._t(lang, "target_runtime")),
+            target_runtime_hint=_esc(self._t(lang, "target_runtime_hint")),
             target_agent_label=_esc(self._t(lang, "target_agent")),
+            target_agent_hint=_esc(self._t(lang, "target_agent_hint")),
             optional_label=_esc(self._t(lang, "optional")),
             command_type_label=_esc(self._t(lang, "command_type")),
+            command_type_hint=_esc(self._t(lang, "command_type_hint")),
             permission_level_label=_esc(self._t(lang, "permission_level")),
             priority_label=_esc(self._t(lang, "priority")),
             idempotency_label=_esc(self._t(lang, "idempotency_key")),
             idempotency_placeholder=_esc(self._t(lang, "idempotency_placeholder")),
             payload_label=_esc(self._t(lang, "structured_payload_json")),
+            payload_hint=_esc(self._t(lang, "payload_hint")),
+            payload_example_label=_esc(self._t(lang, "payload_example")),
             publish_label=_esc(self._t(lang, "publish_structured_command")),
             session_id=_esc(selected_id or ""),
             options=options,
         )
-
-    def _render_mode_cards(self, selected_id: Optional[str], lang: str) -> str:
-        cards = []
-        for template in self.collaboration_modes.list():
-            defaults = template.command_defaults
-            payload = json.dumps(
-                {
-                    "summary": template.summary,
-                    "workflow": template.workflow,
-                    "expected_outputs": template.output_expectations,
-                },
-                ensure_ascii=True,
-            )
-            cards.append(
-                """
-                <article class="list-item">
-                  <strong>{name}</strong> <span class="badge">{participants}</span>
-                  <div class="muted">{summary}</div>
-                  <pre>{workflow}</pre>
-                  <form method="post" action="/mission-control/commands">
-                    <input type="hidden" name="lang" value="{lang}">
-                    <input type="hidden" name="session_id" value="{session_id}">
-                    <input type="hidden" name="created_by" value="mission-control">
-                    <input type="hidden" name="mode" value="{name}">
-                    <input type="hidden" name="target_runtime" value="codex">
-                    <input type="hidden" name="command_type" value="{command_type}">
-                    <input type="hidden" name="permission_level" value="{permission_level}">
-                    <input type="hidden" name="priority" value="{priority}">
-                    <input type="hidden" name="payload" value='{payload}'>
-                    <button type="submit">{quick_publish}</button>
-                  </form>
-                </article>
-                """.format(
-                    lang=_esc(lang),
-                    name=_esc(template.name),
-                    participants=_esc(", ".join(template.participants)),
-                    summary=_esc(template.description),
-                    workflow=_json_preview(template.workflow),
-                    session_id=_esc(selected_id or ""),
-                    command_type=_esc(defaults["command_type"]),
-                    permission_level=_esc(defaults["permission_level"]),
-                    priority=_esc(defaults["priority"]),
-                    payload=_esc(payload),
-                    quick_publish=_esc(self._t(lang, "quick_publish", name=template.name)),
-                )
-            )
-        return "".join(cards)
 
     def _render_agent_states(self, agent_states: List[Any], lang: str) -> str:
         if not agent_states:
@@ -2054,12 +2317,47 @@ class MissionControlUI:
             )
         return "".join(ledger_items)
 
-    def _render_memory_items(self, candidates: List[Any], lang: str) -> str:
+    def _render_memory_sections(self, candidates: List[Any], cluster_map: Dict[str, Any], lang: str) -> str:
         if not candidates:
             return "<div class='memory-card'><strong>{}</strong><div class='muted'>{}</div></div>".format(
                 _esc(self._t(lang, "no_memory_entries")),
                 _esc(self._t(lang, "try_another_filter")),
             )
+        deposited = [candidate for candidate in candidates if candidate.status in {"active", "corrected"}]
+        review = [candidate for candidate in candidates if candidate.status == "pending"]
+        merged = [candidate for candidate in candidates if candidate.status == "merged"]
+        used_ids = {
+            candidate.candidate_id
+            for candidate in deposited + review + merged
+        }
+        historical = [candidate for candidate in candidates if candidate.candidate_id not in used_ids]
+        sections = [
+            ("deposited_memory_section", "deposited_memory_lead", deposited),
+            ("review_queue_section", "review_queue_lead", review),
+            ("merged_records_section", "merged_records_lead", merged),
+            ("other_records_section", "other_records_lead", historical),
+        ]
+        rendered = []
+        for title_key, lead_key, items in sections:
+            if not items:
+                continue
+            rendered.append(
+                "<section class='memory-section'>"
+                "<div class='section-title'><h2>{title}</h2><span class='badge'>{count}</span></div>"
+                "<p class='section-lead'>{lead}</p>"
+                "<div class='memory-list'>{items}</div>"
+                "</section>".format(
+                    title=_esc(self._t(lang, title_key)),
+                    count=_esc(self._t(lang, "shown_count", count=len(items))),
+                    lead=_esc(self._t(lang, lead_key)),
+                    items=self._render_memory_items(items, cluster_map, lang),
+                )
+            )
+        return "".join(rendered)
+
+    def _render_memory_items(self, candidates: List[Any], cluster_map: Dict[str, Any], lang: str) -> str:
+        if not candidates:
+            return ""
         items = []
         for candidate in candidates:
             badges = [
@@ -2070,6 +2368,23 @@ class MissionControlUI:
                 badges.append("<span class='badge warn'>{}</span>".format(_esc(self._t(lang, "conflict"))))
             if candidate.rejected:
                 badges.append("<span class='badge warn'>{}</span>".format(_esc(self._t(lang, "rejected"))))
+            relationship_rows = self._memory_relationship_rows(candidate, cluster_map, lang)
+            role_text = self._memory_role_text(candidate, cluster_map, lang)
+            facts = [
+                (self._t(lang, "memory_type_label"), self._display_memory_type(lang, candidate.type)),
+                (self._t(lang, "level"), candidate.memory_level or self._t(lang, "unknown")),
+                (self._t(lang, "session"), candidate.session_id or self._t(lang, "global")),
+                (self._t(lang, "candidate_id_label"), candidate.candidate_id),
+                (self._t(lang, "proposed_by"), candidate.proposed_by),
+                (self._t(lang, "created"), candidate.created_at),
+            ]
+            facts_html = "".join(
+                "<div class='memory-fact'><small>{label}</small><strong>{value}</strong></div>".format(
+                    label=_esc(label),
+                    value=_esc(value),
+                )
+                for label, value in facts
+            )
             items.append(
                 """
                 <article class="memory-card">
@@ -2077,8 +2392,13 @@ class MissionControlUI:
                     <strong>{title}</strong>
                     {badges}
                   </div>
-                  <div class="muted">{session_label}: {session_id} · {proposed_by_label}: {proposed_by} · {runtime_label}: {runtime} · {created_label}: {created_at}</div>
-                  <pre>{summary}</pre>
+                  <div class="memory-note"><strong>{memory_role_label}:</strong> {role_text}</div>
+                  <div class="memory-facts">{facts}</div>
+                  {relationships}
+                  <div class="memory-summary-block">
+                    <small>{memory_summary_label}</small>
+                    <p class="memory-summary">{summary}</p>
+                  </div>
                   <details>
                     <summary>{full_content_label}</summary>
                     <pre>{content}</pre>
@@ -2091,14 +2411,11 @@ class MissionControlUI:
                 """.format(
                     title=_esc(candidate.title),
                     badges=" ".join(badges),
-                    session_label=_esc(self._t(lang, "session")),
-                    session_id=_esc(candidate.session_id or self._t(lang, "global")),
-                    proposed_by_label=_esc(self._t(lang, "proposed_by")),
-                    proposed_by=_esc(candidate.proposed_by),
-                    runtime_label=_esc(self._t(lang, "runtime")),
-                    runtime=_esc(candidate.runtime or self._t(lang, "unknown")),
-                    created_label=_esc(self._t(lang, "created")),
-                    created_at=_esc(candidate.created_at),
+                    memory_role_label=_esc(self._t(lang, "memory_role_label")),
+                    role_text=_esc(role_text),
+                    facts=facts_html,
+                    relationships=relationship_rows,
+                    memory_summary_label=_esc(self._t(lang, "memory_summary_label")),
                     summary=_esc(candidate.summary or self._t(lang, "no_summary")),
                     full_content_label=_esc(self._t(lang, "full_content")),
                     content=_esc(candidate.content),
@@ -2121,6 +2438,63 @@ class MissionControlUI:
                 )
             )
         return "".join(items)
+
+    def _memory_role_text(self, candidate: Any, cluster_map: Dict[str, Any], lang: str) -> str:
+        cluster = cluster_map.get(candidate.candidate_id)
+        if candidate.status == "merged":
+            return self._t(lang, "role_merged_memory")
+        if candidate.status == "pending":
+            return self._t(lang, "role_pending_memory")
+        if candidate.status == "corrected":
+            return self._t(lang, "role_corrected_memory")
+        if candidate.status == "superseded":
+            return self._t(lang, "role_superseded_memory")
+        if candidate.status == "rejected":
+            return self._t(lang, "role_rejected_memory")
+        if candidate.status == "archived":
+            return self._t(lang, "role_archived_memory")
+        if cluster is not None or candidate.memory_level == "L3":
+            return self._t(lang, "role_canonical_memory")
+        return self._t(lang, "role_accepted_memory")
+
+    def _memory_relationship_rows(self, candidate: Any, cluster_map: Dict[str, Any], lang: str) -> str:
+        rows = []
+        if candidate.status == "merged" and candidate.similar_to:
+            rows.append(
+                "<div class='memory-linkage'>{label}: {value}</div>".format(
+                    label=_esc(self._t(lang, "merged_into")),
+                    value=_esc(", ".join(candidate.similar_to)),
+                )
+            )
+        elif candidate.similar_to:
+            rows.append(
+                "<div class='memory-linkage'>{label}: {value}</div>".format(
+                    label=_esc(self._t(lang, "review_with")),
+                    value=_esc(", ".join(candidate.similar_to)),
+                )
+            )
+        if candidate.conflicts_with:
+            rows.append(
+                "<div class='memory-linkage'>{label}: {value}</div>".format(
+                    label=_esc(self._t(lang, "conflicts_with_label")),
+                    value=_esc(", ".join(candidate.conflicts_with)),
+                )
+            )
+        cluster = cluster_map.get(candidate.candidate_id)
+        if cluster is not None:
+            rows.append(
+                "<div class='memory-linkage'>{cluster_label}: {cluster_id} · {sources_label}: {sources} · {quality_label}: {quality}</div>".format(
+                    cluster_label=_esc(self._t(lang, "cluster_label")),
+                    cluster_id=_esc(cluster.cluster_id),
+                    sources_label=_esc(self._t(lang, "sources_label")),
+                    sources=_esc(cluster.source_count),
+                    quality_label=_esc(self._t(lang, "quality_label")),
+                    quality=_esc(cluster.quality_score),
+                )
+            )
+        if not rows:
+            return ""
+        return "<div class='memory-relationships'>{}</div>".format("".join(rows))
 
     def _filter_memory_candidates(
         self,
@@ -2160,6 +2534,41 @@ class MissionControlUI:
         for candidate in candidates:
             counts[candidate.type] = counts.get(candidate.type, 0) + 1
         return counts
+
+    def _memory_clusters_for_candidates(self, candidates: List[Any]) -> List[Any]:
+        candidate_ids = {candidate.candidate_id for candidate in candidates}
+        return [
+            cluster
+            for cluster in self.storage.list_memory_clusters(limit=200)
+            if cluster.canonical_memory_id in candidate_ids
+        ]
+
+    def _render_memory_refinement_panel(self, candidates: List[Any], clusters: List[Any], lang: str) -> str:
+        accepted_active = len([candidate for candidate in candidates if candidate.status == "active"])
+        merged_duplicates = len([candidate for candidate in candidates if candidate.status == "merged"])
+        needs_review = len([candidate for candidate in candidates if candidate.status == "pending"])
+        metrics = [
+            (self._t(lang, "accepted_active"), accepted_active),
+            (self._t(lang, "merged_duplicates"), merged_duplicates),
+            (self._t(lang, "needs_review"), needs_review),
+            (self._t(lang, "canonical_clusters"), len(clusters)),
+        ]
+        metric_html = "".join(
+            "<div class='refinement-metric'><small>{label}</small><strong>{value}</strong></div>".format(
+                label=_esc(label),
+                value=_esc(value),
+            )
+            for label, value in metrics
+        )
+        rules_html = "".join(
+            "<li>{}</li>".format(_esc(rule))
+            for rule in (
+                self._t(lang, "refinement_rule_exact"),
+                self._t(lang, "refinement_rule_similarity"),
+                self._t(lang, "refinement_rule_canonical"),
+            )
+        )
+        return "<div class='refinement-grid'>{}</div><ol class='refinement-rules'>{}</ol>".format(metric_html, rules_html)
 
     def _memory_link(
         self,

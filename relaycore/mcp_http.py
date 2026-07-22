@@ -4,6 +4,7 @@ import argparse
 from typing import Any, Dict, Optional
 
 from .mcp_server import RelayCoreMCPServer
+from .single_db import SingleDBConstraintError, enforce_single_runtime_db
 from .storage import DEFAULT_DB_PATH, RelayCoreStorage, resolve_database_path
 
 
@@ -27,7 +28,7 @@ def build_mcp_app(
 ):
     from mcp.server.fastmcp import FastMCP
 
-    storage = RelayCoreStorage(resolve_database_path(db_path))
+    storage = RelayCoreStorage(resolve_database_path(enforce_single_runtime_db(db_path)))
     bridge = RelayCoreMCPServer(storage=storage)
     mcp = FastMCP(
         name,
@@ -288,13 +289,17 @@ def build_mcp_app(
 
 def main() -> int:
     args = build_arg_parser().parse_args()
-    mcp, storage = build_mcp_app(
-        name=args.name,
-        db_path=args.db,
-        host=args.host,
-        port=args.port,
-        path=args.path,
-    )
+    try:
+        mcp, storage = build_mcp_app(
+            name=args.name,
+            db_path=args.db,
+            host=args.host,
+            port=args.port,
+            path=args.path,
+        )
+    except SingleDBConstraintError as error:
+        print(str(error))
+        return 2
     try:
         mcp.run(transport="streamable-http")
         return 0
